@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Star, MessageCircle } from 'lucide-react'
+import {Star, MessageCircle } from 'lucide-react'
 import { Button } from "./ui/button"
 import { Card, CardContent } from "./ui/card"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "./ui/carousel"
