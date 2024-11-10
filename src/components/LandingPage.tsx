@@ -22,8 +22,8 @@ export function LandingPage() {
   ]
 
   const testimonials = [
-    { name: 'John Doe', role: 'Event Organizer', quote: 'Ticket\'D has revolutionized how we manage our events. The security and profit-sharing model are game-changers!', rating: 5 },
-    { name: 'Jane Smith', role: 'Concert-goer', quote: 'I love how easy it is to buy and resell tickets. The transparency is refreshing!', rating: 4 },
+    { name: 'Anishka', role: 'Event Organizer', quote: 'Ticket\'D has revolutionized how we manage our events. The security and profit-sharing model are game-changers!', rating: 5 },
+    { name: 'Manish', role: 'Concert-goer', quote: 'I love how easy it is to buy and resell tickets. The transparency is refreshing!', rating: 4 },
   ]
 
   return (
