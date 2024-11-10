@@ -18,6 +18,7 @@ export function LandingPage() {
     { id: 1, title: 'Summer Music Festival', date: '2024-07-15', price: '$99', image: 'https://images.unsplash.com/photo-1528720335838-3f602fea2f0a?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8c3VtbWVyJTIwbXVzaWMlMjBmZXN0aXZhTHxlbnwwfHwwfHx8MA%3D%3D?height=200&width=300', category: 'music' },
     { id: 2, title: 'Tech Conference 2024', date: '2024-09-20', price: '$149', image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8dGVjaG4lMjBjb25mZXJlbmNlfGVufDB8fDB8fHww?height=200&width=300', category: 'tech' },
     { id: 3, title: 'Food & Fruit Expo', date: '2024-08-05', price: '$79', image: 'https://images.unsplash.com/photo-1483918793747-5adbf82956c4?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8Zm9vZCUyMGV4cG98ZW58MHx8MHx8fDA%3D?height=200&width=300', category: 'food' },
+    { id: 4, title: 'Sunburn Concert', date: '2024-10-04', price: '$179', image: 'https://media.istockphoto.com/id/1464613611/photo/energetic-musicians-performing-on-stage.webp?a=1&b=1&s=612x612&w=0&k=20&c=o-kIn10TJ-_rSZz4aPLhuFu9-VA6Gljq1C1Ylh7OU-U=', category: 'music' },
   ]
 
   const testimonials = [
