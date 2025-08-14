@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, Users, TrendingUp, Settings } from "lucide-react"
+import { Calendar, MapPin, Users, TrendingUp, Settings, Tag } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { formatEventDate } from "@/lib/utils"
@@ -55,9 +55,17 @@ export function MyEvents() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">My Events</h2>
-        <Link href="/create-event">
-          <Button>Create New Event</Button>
-        </Link>
+        <div className="flex gap-3">
+          <Link href="/create-listing">
+            <Button variant="outline">
+              <Tag className="h-4 w-4 mr-2" />
+              Create Listing
+            </Button>
+          </Link>
+          <Link href="/create-event">
+            <Button>Create New Event</Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

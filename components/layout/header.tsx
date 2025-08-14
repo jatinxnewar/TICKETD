@@ -14,6 +14,7 @@ export function Header() {
   const navigation = [
     { name: "Events", href: "/events" },
     { name: "Create Event", href: "/create-event" },
+    { name: "Create Listing", href: "/create-listing" },
     { name: "My Tickets", href: "/dashboard" },
     { name: "Marketplace", href: "/marketplace" },
   ]
