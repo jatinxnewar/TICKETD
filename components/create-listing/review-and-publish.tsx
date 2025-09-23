@@ -24,18 +24,25 @@ export function ReviewAndPublish({ formData, onPrev }: ReviewAndPublishProps) {
 
   const handlePublish = async () => {
     setIsPublishing(true)
-    
-    // Simulate API call to create listing
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Prepare payload for API
+      const payload = {
+        ...formData,
+        userId: "0x1234...abcd" // TODO: Replace with real user ID from wallet or session
+      }
+      const res = await fetch("/api/listings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      if (!res.ok) throw new Error("Failed to create listing")
       setIsPublished(true)
-      
-      // Redirect after successful creation
       setTimeout(() => {
         router.push("/marketplace")
-      }, 3000)
+      }, 2000)
     } catch (error) {
       console.error("Error publishing listing:", error)
+      alert("Failed to publish listing. Please try again.")
     } finally {
       setIsPublishing(false)
     }

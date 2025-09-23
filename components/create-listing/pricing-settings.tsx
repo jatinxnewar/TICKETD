@@ -27,10 +27,10 @@ const auctionDurations = [
 ]
 
 export function PricingSettings({ formData, updateFormData, onNext, onPrev }: PricingSettingsProps) {
-  const originalPrice = formData.selectedTicket?.originalPrice || "0 ETH"
-  const originalPriceNumber = parseFloat(originalPrice.replace(" ETH", ""))
-  const salePriceNumber = parseFloat(formData.salePrice || "0")
-  const minimumPriceNumber = parseFloat(formData.minimumPrice || "0")
+  const originalPrice = formData.selectedTicket?.originalPrice || "₹0"
+  const originalPriceNumber = parseFloat(originalPrice.replace(/[^\d.]/g, ""))
+  const salePriceNumber = parseFloat((formData.salePrice || "0").replace(/[^\d.]/g, ""))
+  const minimumPriceNumber = parseFloat((formData.minimumPrice || "0").replace(/[^\d.]/g, ""))
 
   const profitMargin = salePriceNumber > originalPriceNumber 
     ? ((salePriceNumber - originalPriceNumber) / originalPriceNumber * 100).toFixed(1)
@@ -107,7 +107,7 @@ export function PricingSettings({ formData, updateFormData, onNext, onPrev }: Pr
                 className="pr-12"
               />
               <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
-                ETH
+                ₹
               </span>
             </div>
             {salePriceNumber > originalPriceNumber && (
@@ -133,7 +133,7 @@ export function PricingSettings({ formData, updateFormData, onNext, onPrev }: Pr
                   className="pr-12"
                 />
                 <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
-                  ETH
+                  ₹
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -186,7 +186,7 @@ export function PricingSettings({ formData, updateFormData, onNext, onPrev }: Pr
         </div>
 
         {/* Fee Breakdown */}
-        {formData.salePrice && parseFloat(formData.salePrice) > 0 && (
+  {formData.salePrice && parseFloat(formData.salePrice.replace(/[^\d.]/g, "")) > 0 && (
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
@@ -195,19 +195,19 @@ export function PricingSettings({ formData, updateFormData, onNext, onPrev }: Pr
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="flex justify-between">
                     <span>Sale Price:</span>
-                    <span>{formData.salePrice} ETH</span>
+                    <span>{formData.salePrice} ₹</span>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
                     <span>Platform Fee (2.5%):</span>
-                    <span>-{platformFee} ETH</span>
+                    <span>-{platformFee} ₹</span>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
                     <span>Creator Royalty ({formData.royaltyPercentage}%):</span>
-                    <span>-{royaltyFee} ETH</span>
+                    <span>-{royaltyFee} ₹</span>
                   </div>
                   <div className="flex justify-between font-medium border-t pt-1">
                     <span>You Receive:</span>
-                    <span className="text-green-600">{netReceived} ETH</span>
+                    <span className="text-green-600">{netReceived} ₹</span>
                   </div>
                 </div>
               </div>
