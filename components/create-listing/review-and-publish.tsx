@@ -52,12 +52,24 @@ export function ReviewAndPublish({ formData, onPrev }: ReviewAndPublishProps) {
   const royaltyFee = (parseFloat(formData.salePrice) * (parseFloat(formData.royaltyPercentage) / 100)).toFixed(4)
   const netReceived = (parseFloat(formData.salePrice) - parseFloat(platformFee) - parseFloat(royaltyFee)).toFixed(4)
 
+  // Simple Fireworks animation component
+  function Fireworks() {
+    return (
+      <div style={{ position: "relative", width: "100%", height: 80, marginBottom: 16 }}>
+        <span style={{ position: "absolute", left: "20%", fontSize: 32 }}>🎆</span>
+        <span style={{ position: "absolute", left: "45%", fontSize: 40 }}>🎇</span>
+        <span style={{ position: "absolute", left: "70%", fontSize: 32 }}>🎆</span>
+      </div>
+    )
+  }
+
   if (isPublished) {
     return (
       <Card>
         <CardContent className="text-center py-12">
+          <Fireworks />
           <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Listing Published Successfully!</h2>
+          <h2 className="text-2xl font-bold mb-2">🎉 Listing Published Successfully! 🎉</h2>
           <p className="text-muted-foreground mb-6">
             Your ticket is now live on the marketplace. Redirecting you to view your listing...
           </p>
