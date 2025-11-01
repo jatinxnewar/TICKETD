@@ -1,3 +1,5 @@
+﻿"use client"
+
 import { Header } from "@/components/layout/header"
 import { MarketplaceGrid } from "@/components/marketplace/marketplace-grid"
 import { MarketplaceFilters } from "@/components/marketplace/marketplace-filters"
@@ -6,7 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
 
-  const [filters, setFilters] = useState({ price: [0, 10000], categories: [], types: [], locations: [] });
+export default function MarketplacePage() {
+  const [filters, setFilters] = useState({ price: [0, 10000], categories: [], types: [], locations: [] })
+
   return (
     <div className="min-h-screen bg-background">
       <Header />

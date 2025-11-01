@@ -1,200 +1,247 @@
 "use client"
 
-import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar, MapPin, Users, Filter } from "lucide-react"
+import { Calendar, MapPin, Users, ArrowRight, TrendingUp, Clock } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { formatEventDate } from "@/lib/utils"
 
 const events = [
-  {
-    id: 1,
-    title: "Web3 Gaming Conference",
-    date: "2024-04-01",
-    time: "10:00",
-    location: "Los Angeles, CA",
-    image: "/placeholder.svg?height=200&width=300",
-    price: "0.08 ETH",
-    attendees: 800,
-    category: "Gaming",
-  },
-  {
-    id: 2,
-    title: "Crypto Trading Workshop",
-    date: "2024-04-05",
-    time: "14:00",
-    location: "Chicago, IL",
-    image: "/placeholder.svg?height=200&width=300",
-    price: "0.03 ETH",
-    attendees: 200,
-    category: "Education",
-  },
-  {
-    id: 3,
-    title: "NFT Music Festival",
-    date: "2024-04-10",
-    time: "16:00",
-    location: "Miami, FL",
-    image: "/placeholder.svg?height=200&width=300",
-    price: "0.15 ETH",
-    attendees: 2000,
-    category: "Music",
-  },
-  {
-    id: 4,
-    title: "Metaverse Expo",
-    date: "2024-04-15",
-    time: "11:00",
-    location: "Seattle, WA",
-    image: "/placeholder.svg?height=200&width=300",
-    price: "0.12 ETH",
-    attendees: 1500,
-    category: "Technology",
-  },
-  {
-    id: 5,
-    title: "DeFi Hackathon",
-    date: "2024-04-20",
-    time: "09:00",
-    location: "Boston, MA",
-    image: "/placeholder.svg?height=200&width=300",
-    price: "Free",
-    attendees: 300,
-    category: "Hackathon",
-  },
-  {
-    id: 6,
-    title: "Blockchain Art Exhibition",
-    date: "2024-04-25",
-    time: "18:00",
-    location: "Denver, CO",
-    image: "/placeholder.svg?height=200&width=300",
-    price: "0.06 ETH",
-    attendees: 400,
-    category: "Art",
-  },
+	{
+		id: 1,
+		title: "Bharatanatyam Classical Dance",
+		date: "2024-11-15",
+		time: "18:00",
+		location: "Chennai, Tamil Nadu",
+		image: "https://images.unsplash.com/photo-1599152115776-39fab7c00836?w=800&h=600&fit=crop",
+		price: "₹1,200",
+		category: "Dance",
+		attendees: 150,
+		trending: true,
+		status: "filling-fast"
+	},
+	{
+		id: 2,
+		title: "Hindustani Music Concert",
+		date: "2024-11-20",
+		time: "19:30",
+		location: "Mumbai, Maharashtra",
+		image: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&h=600&fit=crop",
+		price: "₹2,800",
+		category: "Music",
+		attendees: 300,
+		trending: false,
+		status: "available"
+	},
+	{
+		id: 3,
+		title: "Traditional Art Exhibition",
+		date: "2024-11-25",
+		time: "10:00",
+		location: "Delhi, NCR",
+		image: "https://images.unsplash.com/photo-1577083552431-6e5fd01988ec?w=800&h=600&fit=crop",
+		price: "₹500",
+		category: "Art",
+		attendees: 2000,
+		trending: true,
+		status: "available"
+	},
+	{
+		id: 4,
+		title: "Startup Pitch Competition",
+		date: "2024-12-01",
+		time: "09:00",
+		location: "Bangalore, Karnataka",
+		image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=600&fit=crop",
+		price: "₹800",
+		category: "Technology",
+		attendees: 500,
+		trending: false,
+		status: "available"
+	},
+	{
+		id: 5,
+		title: "Food & Culture Festival",
+		date: "2024-12-05",
+		time: "11:00",
+		location: "Hyderabad, Telangana",
+		image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&h=600&fit=crop",
+		price: "₹600",
+		category: "Food",
+		attendees: 1200,
+		trending: true,
+		status: "filling-fast"
+	},
+	{
+		id: 6,
+		title: "Rajasthani Folk Music Night",
+		date: "2024-12-10",
+		time: "20:00",
+		location: "Jaipur, Rajasthan",
+		image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop",
+		price: "₹1,500",
+		category: "Folk Music",
+		attendees: 800,
+		trending: false,
+		status: "available"
+	},
 ]
 
 export function EventGrid() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("all")
-  const [selectedLocation, setSelectedLocation] = useState("all")
+	return (
+		<section className="py-20 bg-gradient-to-br from-muted/30 via-background to-muted/20">
+			<div className="container mx-auto px-4 max-w-7xl">
+				{/* Header Section */}
+				<div className="flex items-center justify-between mb-16">
+					<div className="space-y-4">
+						<div className="flex items-center gap-3">
+							<div className="h-1 w-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-full"></div>
+							<span className="text-sm font-medium text-orange-600 uppercase tracking-wider">
+								Trending Now
+							</span>
+						</div>
+						<h2 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+							Discover Events
+						</h2>
+						<p className="text-muted-foreground text-lg max-w-2xl leading-relaxed">
+							Find the perfect cultural experience for you. From classical performances to modern celebrations, explore India's vibrant event scene.
+						</p>
+					</div>
+					<div className="hidden md:flex items-center gap-4">
+						<div className="text-right">
+							<p className="text-sm text-muted-foreground">Browse all categories</p>
+							<p className="font-semibold">500+ Events Available</p>
+						</div>
+						<Link href="/events">
+							<Button variant="outline" size="lg" className="group">
+								Explore All
+								<ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+							</Button>
+						</Link>
+					</div>
+				</div>
 
-  const categories = ["all", "Gaming", "Education", "Music", "Technology", "Hackathon", "Art"]
-  const locations = ["all", "Los Angeles, CA", "Chicago, IL", "Miami, FL", "Seattle, WA", "Boston, MA", "Denver, CO"]
+				{/* Events Grid */}
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+					{events.map((event, index) => (
+						<Card 
+							key={event.id} 
+							className="group overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 bg-card/90 backdrop-blur-sm"
+						>
+							<div className="relative h-56 overflow-hidden">
+								<Image
+									src={event.image}
+									alt={event.title}
+									fill
+									className="object-cover transition-transform duration-700 group-hover:scale-110"
+								/>
+								<div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+								
+								{/* Category Badge */}
+								<Badge className="absolute top-4 left-4 bg-background/90 text-foreground backdrop-blur-sm border-0">
+									{event.category}
+								</Badge>
 
-  const filteredEvents = events.filter((event) => {
-    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === "all" || event.category === selectedCategory
-    const matchesLocation = selectedLocation === "all" || event.location === selectedLocation
-    return matchesSearch && matchesCategory && matchesLocation
-  })
+								{/* Status Indicators */}
+								<div className="absolute top-4 right-4 flex flex-col gap-2">
+									{event.trending && (
+										<div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+											<TrendingUp className="h-3 w-3" />
+											Trending
+										</div>
+									)}
+									{event.status === "filling-fast" && (
+										<div className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+											<Clock className="h-3 w-3" />
+											Filling Fast
+										</div>
+									)}
+								</div>
 
-  return (
-    <section className="py-16 px-4 bg-muted/30">
-      <div className="container mx-auto">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">Discover Events</h2>
-          <p className="text-muted-foreground mb-6">Find the perfect event for you</p>
+								{/* Attendees Count Overlay */}
+								<div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
+									{event.attendees}+ attending
+								</div>
+							</div>
 
-          {/* Filters */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <Input
-                placeholder="Search events..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category === "all" ? "All Categories" : category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Location" />
-              </SelectTrigger>
-              <SelectContent>
-                {locations.map((location) => (
-                  <SelectItem key={location} value={location}>
-                    {location === "all" ? "All Locations" : location}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+							<CardContent className="p-6 space-y-4">
+								<div className="space-y-3">
+									<h3 className="font-bold text-lg line-clamp-2 group-hover:text-primary transition-colors">
+										{event.title}
+									</h3>
+									
+									<div className="space-y-2 text-sm text-muted-foreground">
+										<div className="flex items-center gap-2">
+											<Calendar className="h-4 w-4 text-primary" />
+											<span className="font-medium">
+												{formatEventDate(new Date(event.date))} • {event.time}
+											</span>
+										</div>
+										<div className="flex items-center gap-2">
+											<MapPin className="h-4 w-4 text-primary" />
+											<span>{event.location}</span>
+										</div>
+									</div>
+								</div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEvents.map((event) => (
-            <Card
-              key={event.id}
-              className="card-enhanced group hover:shadow-lg transition-all duration-300 overflow-hidden"
-            >
-              <div className="relative">
-                <Image
-                  src={event.image || "/placeholder.svg"}
-                  alt={event.title}
-                  width={300}
-                  height={200}
-                  className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <Badge variant="secondary" className="absolute top-3 right-3">
-                  {event.category}
-                </Badge>
-              </div>
+								<div className="flex items-center justify-between pt-4 border-t border-border/50">
+									<div className="space-y-1">
+										<p className="text-xs text-muted-foreground">Starting from</p>
+										<span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+											{event.price}
+										</span>
+									</div>
+									<Link href={`/events/${event.id}`}>
+										<Button 
+											size="sm" 
+											className="group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300"
+										>
+											View Details
+											<ArrowRight className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-1" />
+										</Button>
+									</Link>
+								</div>
+							</CardContent>
+						</Card>
+					))}
+				</div>
 
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">{event.title}</h3>
+				{/* Call to Action Section */}
+				<div className="mt-16 text-center">
+					<div className="max-w-3xl mx-auto space-y-6 p-8 bg-gradient-to-r from-primary/5 to-primary/10 rounded-2xl border border-primary/20">
+						<h3 className="text-2xl font-bold">Can't find what you're looking for?</h3>
+						<p className="text-muted-foreground">
+							Explore our complete catalog of events or create your own unique experience.
+						</p>
+						<div className="flex flex-col sm:flex-row gap-4 justify-center">
+							<Link href="/events">
+								<Button size="lg" className="group">
+									Browse All Events
+									<ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+								</Button>
+							</Link>
+							<Link href="/create-event">
+								<Button size="lg" variant="outline" className="group">
+									Create Your Event
+									<ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+								</Button>
+							</Link>
+						</div>
+					</div>
+				</div>
 
-                <div className="space-y-1 text-sm text-muted-foreground mb-4">
-                  <div className="flex items-center">
-                    <Calendar className="h-3 w-3 mr-2" />
-                    {formatEventDate(event.date)} at {event.time}
-                  </div>
-                  <div className="flex items-center">
-                    <MapPin className="h-3 w-3 mr-2" />
-                    {event.location}
-                  </div>
-                  <div className="flex items-center">
-                    <Users className="h-3 w-3 mr-2" />
-                    {event.attendees} attending
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold">{event.price}</span>
-                  <Link href={`/events/${event.id}`}>
-                    <Button size="sm">View Details</Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {filteredEvents.length === 0 && (
-          <div className="text-center py-12">
-            <Filter className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No events found</h3>
-            <p className="text-muted-foreground">Try adjusting your search criteria</p>
-          </div>
-        )}
-      </div>
-    </section>
-  )
+				{/* Mobile View All Button */}
+				<div className="flex justify-center mt-12 md:hidden">
+					<Link href="/events">
+						<Button size="lg" className="group">
+							Explore All Events
+							<ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+						</Button>
+					</Link>
+				</div>
+			</div>
+		</section>
+	)
 }
