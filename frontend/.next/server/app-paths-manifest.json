@@ -1,0 +1,6 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/create-listing/page": "app/create-listing/page.js",
+  "/marketplace/page": "app/marketplace/page.js",
+  "/events/page": "app/events/page.js"
+}
