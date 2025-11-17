@@ -53,27 +53,4 @@ export default function EventDetailPage() {
     </div>
   )
 }
-    { time: "21:00", title: "Networking & Refreshments" },
-  ],
-  speakers: [
-    { name: "Vitalik Buterin", role: "Ethereum Founder", avatar: "/placeholder.svg?height=64&width=64" },
-    { name: "Changpeng Zhao", role: "Binance CEO", avatar: "/placeholder.svg?height=64&width=64" },
-  ],
-  socialLinks: {
-    website: "https://blockchainsummit.com",
-    twitter: "@blockchainsummit",
-    discord: "https://discord.gg/blockchain",
-  },
-}
 
-export default function EventDetailPage({ params }: { params: { id: string } }) {
-  return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main>
-        <EventDetail event={eventData} />
-      </main>
-      <Footer />
-    </div>
-  )
-}
