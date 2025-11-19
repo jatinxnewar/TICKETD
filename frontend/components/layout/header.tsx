@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { WalletConnect } from "@/components/wallet/wallet-connect"
+import { NetworkSwitcher } from "@/components/network-switcher"
 import { Search, Menu, Ticket } from "lucide-react"
 import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -54,6 +55,7 @@ export function Header() {
 
         {/* Right controls */}
         <div className="flex items-center space-x-2 md:space-x-4">
+          <NetworkSwitcher />
           <Button variant="ghost" size="icon" aria-label="Search">
             <Search className="h-4 w-4" />
           </Button>

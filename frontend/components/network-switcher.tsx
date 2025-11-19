@@ -3,10 +3,33 @@
 import { useWeb3 } from "@/components/web3-provider"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { AlertCircle } from "lucide-react"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle, Network } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const HEDERA_TESTNET_CHAIN_ID = 296
+const HEDERA_MAINNET_CHAIN_ID = 295
+
+const NETWORKS = [
+  {
+    chainId: 296,
+    name: "Hedera Testnet",
+    icon: "🌐",
+    rpc: "https://testnet.hashio.io/api",
+  },
+  {
+    chainId: 295,
+    name: "Hedera Mainnet",
+    icon: "🌐",
+    rpc: "https://mainnet.hashio.io/api",
+  },
+]
 
 export function NetworkSwitcher() {
   const { chainId, isConnected, switchNetwork } = useWeb3()
@@ -15,19 +38,12 @@ export function NetworkSwitcher() {
     return null
   }
 
+  const currentNetwork = NETWORKS.find(n => n.chainId === chainId)
   const isCorrectNetwork = chainId === HEDERA_TESTNET_CHAIN_ID
 
-  if (isCorrectNetwork) {
-    return (
-      <Badge variant="default" className="bg-green-600 hover:bg-green-700">
-        ✓ Hedera Testnet
-      </Badge>
-    )
-  }
-
-  const handleSwitchNetwork = async () => {
+  const handleSwitchNetwork = async (targetChainId: number) => {
     try {
-      await switchNetwork(HEDERA_TESTNET_CHAIN_ID)
+      await switchNetwork(targetChainId)
     } catch (error: any) {
       console.error("Failed to switch network:", error)
       alert(error.message || "Failed to switch network. Please switch manually in your wallet.")
@@ -35,20 +51,47 @@ export function NetworkSwitcher() {
   }
 
   return (
-    <Alert variant="destructive" className="mb-4">
-      <AlertCircle className="h-4 w-4" />
-      <AlertTitle>Wrong Network</AlertTitle>
-      <AlertDescription className="flex items-center justify-between">
-        <span>Please switch to Hedera Testnet (Chain ID: 296)</span>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <Button 
-          onClick={handleSwitchNetwork} 
-          size="sm" 
-          variant="outline"
-          className="ml-4"
+          variant={isCorrectNetwork ? "default" : "destructive"} 
+          size="sm"
+          className="hidden md:flex items-center gap-2"
         >
-          Switch Network
+          {isCorrectNetwork ? (
+            <>
+              <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+              <span>Hedera Testnet</span>
+            </>
+          ) : (
+            <>
+              <AlertCircle className="h-4 w-4" />
+              <span>{currentNetwork?.name || `Chain ${chainId}`}</span>
+            </>
+          )}
         </Button>
-      </AlertDescription>
-    </Alert>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>Select Network</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {NETWORKS.map((network) => (
+          <DropdownMenuItem
+            key={network.chainId}
+            onClick={() => handleSwitchNetwork(network.chainId)}
+            className="cursor-pointer"
+          >
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                <span>{network.icon}</span>
+                <span>{network.name}</span>
+              </div>
+              {chainId === network.chainId && (
+                <Badge variant="secondary" className="ml-2">Active</Badge>
+              )}
+            </div>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
