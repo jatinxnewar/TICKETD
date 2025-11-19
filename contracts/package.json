@@ -7,8 +7,12 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "deploy": "hardhat run scripts/deploy.ts",
+    "deploy:hedera": "hardhat run scripts/deploy.ts --network hedera",
     "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
     "deploy:mumbai": "hardhat run scripts/deploy.ts --network mumbai",
+    "test:connection": "hardhat run scripts/test-connection.ts --network hedera",
+    "test:contract": "hardhat run scripts/test-contract.ts --network hedera",
+    "check:balance": "hardhat run scripts/check-balance.ts --network hedera",
     "verify": "hardhat verify",
     "node": "hardhat node",
     "clean": "hardhat clean"

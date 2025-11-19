@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "C:\\Users\\asus\\Downloads\\ticketd-platform\\contracts\\contracts\\TicketNFT.sol": {
-      "lastModificationDate": 1763360433163,
-      "contentHash": "e9bf47187118878372fd91be3724a0bf",
+      "lastModificationDate": 1763534810054,
+      "contentHash": "85b54aeb15b7e37153f3451f91d03f27",
       "sourceName": "contracts/TicketNFT.sol",
       "solcConfig": {
         "version": "0.8.20",
@@ -30,14 +30,13 @@
         }
       },
       "imports": [
-        "@openzeppelin/contracts/token/ERC721/ERC721.sol",
-        "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol",
-        "@openzeppelin/contracts/access/Ownable.sol"
+        "@openzeppelin/contracts/token/ERC721/ERC721.sol"
       ],
       "versionPragmas": [
         "^0.8.20"
       ],
       "artifacts": [
+        "Ownable",
         "TicketNFT"
       ]
     },

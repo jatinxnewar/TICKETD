@@ -1,8 +1,24 @@
 # Ticket'D Platform - Monorepo Structure
 
-A decentralized event ticketing platform built with Next.js, Express, MongoDB, and Ethereum smart contracts. This platform enables event organizers to create NFT-based tickets and allows users to securely buy, sell, and transfer tickets on the blockchain.
+A decentralized event ticketing platform built with Next.js, Express, and Hedera smart contracts. This platform enables event organizers to create NFT-based tickets and allows users to securely buy, sell, and transfer tickets on the blockchain.
 
-## � Project Structure
+## 🚀 Quick Deploy to Hedera Testnet
+
+**Ready to deploy in 5 minutes!** Contract is fixed and compiled. ✅
+
+1. Get free Hedera testnet account: [portal.hedera.com/register](https://portal.hedera.com/register)
+2. Follow: **[contracts/README_DEPLOYMENT.md](./contracts/README_DEPLOYMENT.md)** - Complete deployment guide
+3. See: **[contracts/HEDERA_DEPLOYMENT.md](./contracts/HEDERA_DEPLOYMENT.md)** - Detailed instructions
+4. Reference: **[contracts/CONTRACT_REFERENCE.md](./contracts/CONTRACT_REFERENCE.md)** - Full API docs
+
+**Contract Features:**
+- ✅ Event Creation - Organizers create events with ticket inventory
+- ✅ Ticket Minting - Users buy tickets as NFTs (ERC-721)
+- ✅ Ticket Transfer - Standard NFT transfers between wallets
+- ✅ Ticket Resale - Built-in secondary marketplace with 2.5% platform fee
+- ✅ Ticket Validation - Mark tickets as "used" for entry control
+
+## 📁 Project Structure
 
 This project is organized as a **monorepo** with three main packages:
 
@@ -112,9 +128,13 @@ Navigate to http://localhost:3000 and start using the platform!
 
 ## 📚 Documentation
 
-- **[QUICKSTART.md](./QUICKSTART.md)** - Get started in 5 minutes
+- **[contracts/README_DEPLOYMENT.md](./contracts/README_DEPLOYMENT.md)** - 🚀 **START HERE** - 5-minute deployment guide
+- **[contracts/HEDERA_DEPLOYMENT.md](./contracts/HEDERA_DEPLOYMENT.md)** - Complete Hedera deployment instructions
+- **[contracts/CONTRACT_REFERENCE.md](./contracts/CONTRACT_REFERENCE.md)** - Full smart contract API reference
+- **[QUICKSTART.md](./QUICKSTART.md)** - Get started with local development
 - **[MIGRATION.md](./MIGRATION.md)** - Migration guide for the new structure
 - **[TICKET_FLOW.md](./TICKET_FLOW.md)** - Complete ticket purchase/resale flow documentation
+- **[HEDERA_SETUP.md](./HEDERA_SETUP.md)** - Hedera configuration guide
 
 ## 🏗️ Architecture
 

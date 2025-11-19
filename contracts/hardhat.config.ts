@@ -21,14 +21,18 @@ const config: HardhatUserConfig = {
     // Hedera Testnet (Primary)
     hedera: {
       url: "https://testnet.hashio.io/api",
-      accounts: process.env.HEDERA_PRIVATE_KEY ? [process.env.HEDERA_PRIVATE_KEY] : [],
+      accounts: process.env.HEDERA_PRIVATE_KEY && process.env.HEDERA_PRIVATE_KEY.length === 64 
+        ? [process.env.HEDERA_PRIVATE_KEY] 
+        : [],
       chainId: 296,
       timeout: 60000,
     },
     // Hedera Mainnet
     hederaMainnet: {
       url: "https://mainnet.hashio.io/api",
-      accounts: process.env.HEDERA_PRIVATE_KEY ? [process.env.HEDERA_PRIVATE_KEY] : [],
+      accounts: process.env.HEDERA_PRIVATE_KEY && process.env.HEDERA_PRIVATE_KEY.length === 64
+        ? [process.env.HEDERA_PRIVATE_KEY] 
+        : [],
       chainId: 295,
     },
     // Keep Ethereum networks for compatibility

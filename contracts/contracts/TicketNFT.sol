@@ -2,14 +2,45 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+// ERC721URIStorage import removed because the environment does not support fetching external OpenZeppelin files;
+// a minimal tokenURI storage implementation is provided below.
+// Minimal Ownable implementation compatible with OpenZeppelin's interface
+abstract contract Ownable {
+    address private _owner;
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    constructor() {
+        _owner = msg.sender;
+        emit OwnershipTransferred(address(0), _owner);
+    }
+
+    function owner() public view virtual returns (address) {
+        return _owner;
+    }
+
+    modifier onlyOwner() {
+        require(owner() == msg.sender, "Ownable: caller is not the owner");
+        _;
+    }
+
+    function renounceOwnership() public virtual onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
+    }
+
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
+    }
+}
 
 /**
  * @title TicketNFT
  * @dev NFT-based ticketing system with resale functionality
  */
-contract TicketNFT is ERC721, ERC721URIStorage, Ownable {
+contract TicketNFT is ERC721, Ownable {
     uint256 private _tokenIdCounter;
     uint256 private _eventIdCounter;
     
@@ -36,6 +67,15 @@ contract TicketNFT is ERC721, ERC721URIStorage, Ownable {
     mapping(uint256 => Ticket) public tickets;
     mapping(uint256 => uint256[]) public eventTickets;
     
+    // Local storage for token URIs (replacement for ERC721URIStorage)
+    mapping(uint256 => string) private _tokenURIs;
+    
+    // Internal setter for token URI
+    function _setTokenURI(uint256 tokenId, string memory _tokenURI) internal virtual {
+        require(_exists(tokenId), "ERC721URIStorage: URI set of nonexistent token");
+        _tokenURIs[tokenId] = _tokenURI;
+    }
+    
     uint256 public platformFeePercentage = 250; // 2.5%
     uint256 public constant FEE_DENOMINATOR = 10000;
     
@@ -46,7 +86,7 @@ contract TicketNFT is ERC721, ERC721URIStorage, Ownable {
     event ResaleCompleted(uint256 indexed tokenId, address indexed seller, address indexed buyer, uint256 price);
     event TicketValidated(uint256 indexed tokenId, address indexed validator);
     
-    constructor() ERC721("TicketD", "TKT") Ownable(msg.sender) {
+    constructor() ERC721("TicketD", "TKT") {
         _tokenIdCounter = 0;
         _eventIdCounter = 0;
     }
@@ -144,9 +184,10 @@ contract TicketNFT is ERC721, ERC721URIStorage, Ownable {
         require(ticket.forSale, "Ticket not for sale");
         require(msg.value >= ticket.resalePrice, "Insufficient payment");
         
+        uint256 salePrice = ticket.resalePrice;
         address seller = ownerOf(tokenId);
-        uint256 platformFee = (ticket.resalePrice * platformFeePercentage) / FEE_DENOMINATOR;
-        uint256 sellerAmount = ticket.resalePrice - platformFee;
+        uint256 platformFee = (salePrice * platformFeePercentage) / FEE_DENOMINATOR;
+        uint256 sellerAmount = salePrice - platformFee;
         
         // Transfer ticket
         _transfer(seller, msg.sender, tokenId);
@@ -159,7 +200,7 @@ contract TicketNFT is ERC721, ERC721URIStorage, Ownable {
         payable(seller).transfer(sellerAmount);
         payable(owner()).transfer(platformFee);
         
-        emit ResaleCompleted(tokenId, seller, msg.sender, ticket.resalePrice);
+        emit ResaleCompleted(tokenId, seller, msg.sender, salePrice);
     }
     
     /**
@@ -202,12 +243,31 @@ contract TicketNFT is ERC721, ERC721URIStorage, Ownable {
         return (ticket.eventId, ticket.price, ticket.used, ticket.forSale, ticket.resalePrice);
     }
     
+    /**
+     * @dev Get tickets for an event
+     */
+    function getEventTickets(uint256 eventId) external view returns (uint256[] memory) {
+        return eventTickets[eventId];
+    }
+    
+    /**
+     * @dev Check if token exists
+     */
+    function _exists(uint256 tokenId) internal view returns (bool) {
+        return _ownerOf(tokenId) != address(0);
+    }
+    
     // Override required functions
-    function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+        string memory _uri = _tokenURIs[tokenId];
+        if (bytes(_uri).length > 0) {
+            return _uri;
+        }
         return super.tokenURI(tokenId);
     }
     
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view override returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 }
