@@ -12,7 +12,7 @@ export interface ContractAddresses {
 export const CONTRACTS: Record<number, ContractAddresses> = {
   // Ethereum Mainnet
   1: {
-    ticketNFT: "0x0000000000000000000000000000000000000000", // TODO: Deploy and update
+    ticketNFT: "", // TODO: Deploy and update
     marketplace: "0x0000000000000000000000000000000000000000", // TODO: Deploy and update
   },
   
@@ -45,6 +45,18 @@ export const CONTRACTS: Record<number, ContractAddresses> = {
     ticketNFT: "0x0000000000000000000000000000000000000000", // TODO: Deploy and update
     marketplace: "0x0000000000000000000000000000000000000000", // TODO: Deploy and update
   },
+  
+  // Hedera Testnet
+  296: {
+    ticketNFT: "0xb897e663baE872470ED388616b5DF0C229A80bA0", // Deployed
+    marketplace: "0x0000000000000000000000000000000000000000", // Marketplace is handled in contract
+  },
+  
+  // Hedera Mainnet
+  295: {
+    ticketNFT: "0x0000000000000000000000000000000000000000", // TODO: Deploy and update
+    marketplace: "0x0000000000000000000000000000000000000000", // Marketplace is handled in contract
+  },
 }
 
 /**
@@ -63,7 +75,7 @@ export function isChainSupported(chainId: number): boolean {
   
   // Check if addresses are not zero addresses
   return (
-    addresses.ticketNFT !== "0x0000000000000000000000000000000000000000" &&
+    addresses.ticketNFT !== "0xb897e663baE872470ED388616b5DF0C229A80bA0" &&
     addresses.marketplace !== "0x0000000000000000000000000000000000000000"
   )
 }
@@ -99,7 +111,7 @@ export const SUPPORTED_NETWORKS = [
     blockExplorerUrls: ["https://mumbai.polygonscan.com"],
     nativeCurrency: {
       name: "MATIC",
-      symbol: "MATIC",
+      symbol: "MATI0x0000000000000000000000000000000000000000C",
       decimals: 18,
     },
   },

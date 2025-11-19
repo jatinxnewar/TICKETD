@@ -78,10 +78,51 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
         params: [{ chainId: `0x${targetChainId.toString(16)}` }],
       })
     } catch (error: any) {
+      // If the chain has not been added to MetaMask, add it
       if (error.code === 4902) {
-        throw new Error(`Chain ${targetChainId} not added to wallet`)
+        try {
+          // Hedera Testnet configuration
+          if (targetChainId === 296) {
+            await window.ethereum.request({
+              method: "wallet_addEthereumChain",
+              params: [{
+                chainId: `0x${targetChainId.toString(16)}`,
+                chainName: "Hedera Testnet",
+                nativeCurrency: {
+                  name: "HBAR",
+                  symbol: "HBAR",
+                  decimals: 18,
+                },
+                rpcUrls: ["https://testnet.hashio.io/api"],
+                blockExplorerUrls: ["https://hashscan.io/testnet"],
+              }],
+            })
+          }
+          // Hedera Mainnet configuration
+          else if (targetChainId === 295) {
+            await window.ethereum.request({
+              method: "wallet_addEthereumChain",
+              params: [{
+                chainId: `0x${targetChainId.toString(16)}`,
+                chainName: "Hedera Mainnet",
+                nativeCurrency: {
+                  name: "HBAR",
+                  symbol: "HBAR",
+                  decimals: 18,
+                },
+                rpcUrls: ["https://mainnet.hashio.io/api"],
+                blockExplorerUrls: ["https://hashscan.io/mainnet"],
+              }],
+            })
+          } else {
+            throw new Error(`Chain ${targetChainId} not configured`)
+          }
+        } catch (addError) {
+          throw new Error(`Failed to add chain ${targetChainId} to wallet`)
+        }
+      } else {
+        throw error
       }
-      throw error
     }
   }
 

@@ -36,8 +36,29 @@ export function WalletConnect() {
         return "Polygon"
       case 5:
         return "Goerli"
+      case 11155111:
+        return "Sepolia"
+      case 80001:
+        return "Mumbai"
+      case 296:
+        return "Hedera Testnet"
+      case 295:
+        return "Hedera Mainnet"
       default:
-        return "Unknown"
+        return `Chain ${chainId}`
+    }
+  }
+
+  const getCurrencySymbol = (chainId: number) => {
+    switch (chainId) {
+      case 296:
+      case 295:
+        return "HBAR"
+      case 137:
+      case 80001:
+        return "MATIC"
+      default:
+        return "ETH"
     }
   }
 
@@ -58,7 +79,7 @@ export function WalletConnect() {
         <div className="px-2 py-1.5">
           <div className="flex justify-between items-center">
             <span className="text-sm">Balance:</span>
-            <span className="text-sm font-medium">{balance} ETH</span>
+            <span className="text-sm font-medium">{balance} {chainId ? getCurrencySymbol(chainId) : "ETH"}</span>
           </div>
           <div className="flex justify-between items-center mt-1">
             <span className="text-sm">Network:</span>
