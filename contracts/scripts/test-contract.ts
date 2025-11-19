@@ -3,14 +3,9 @@ import { ethers } from "hardhat";
 async function main() {
   console.log("🧪 Testing TicketNFT Contract...\n");
 
-  const contractAddress = process.argv[2];
+  // Get contract address from environment or use default deployed address
+  const contractAddress = process.env.CONTRACT_ADDRESS || "0xb897e663baE872470ED388616b5DF0C229A80bA0";
   
-  if (!contractAddress) {
-    console.error("❌ Error: Contract address required");
-    console.log("Usage: npm run test:contract <contract_address>");
-    process.exit(1);
-  }
-
   console.log("📍 Contract address:", contractAddress);
 
   const [signer] = await ethers.getSigners();
@@ -57,8 +52,11 @@ async function main() {
   console.log("   Price:", ethers.formatEther(eventInfo[3]), "HBAR");
 
   console.log("\n--- Test 2: Mint Ticket ---");
+  // Add extra HBAR for gas fees on Hedera
+  const mintValue = ticketPrice + ethers.parseEther("1"); // Add 1 HBAR for gas
   const mintTx = await ticketNFT.mintTicket(eventId, await signer.getAddress(), {
-    value: ticketPrice,
+    value: mintValue,
+    gasLimit: 500000, // Set explicit gas limit for Hedera
   });
   const mintReceipt = await mintTx.wait();
   
