@@ -48,9 +48,9 @@ export function ReviewAndPublish({ formData, onPrev }: ReviewAndPublishProps) {
     }
   }
 
-  const platformFee = (parseFloat(formData.salePrice) * 0.025).toFixed(4)
-  const royaltyFee = (parseFloat(formData.salePrice) * (parseFloat(formData.royaltyPercentage) / 100)).toFixed(4)
-  const netReceived = (parseFloat(formData.salePrice) - parseFloat(platformFee) - parseFloat(royaltyFee)).toFixed(4)
+  const platformFee = Math.round(parseFloat(formData.salePrice) * 0.025)
+  const royaltyFee = Math.round(parseFloat(formData.salePrice) * (parseFloat(formData.royaltyPercentage) / 100))
+  const netReceived = parseFloat(formData.salePrice) - platformFee - royaltyFee
 
   // Simple Fireworks animation component
   function Fireworks() {
@@ -248,20 +248,20 @@ export function ReviewAndPublish({ formData, onPrev }: ReviewAndPublishProps) {
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <span>Sale Price:</span>
-                <span>{formData.salePrice} ETH</span>
+                <span>₹{Math.round(parseFloat(formData.salePrice)).toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Platform Fee (2.5%):</span>
-                <span>-{platformFee} ETH</span>
+                <span>-₹{platformFee.toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Creator Royalty ({formData.royaltyPercentage}%):</span>
-                <span>-{royaltyFee} ETH</span>
+                <span>-₹{royaltyFee.toLocaleString('en-IN')}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-medium">
                 <span>You will receive:</span>
-                <span className="text-green-600">{netReceived} ETH</span>
+                <span className="text-green-600">₹{Math.round(netReceived).toLocaleString('en-IN')}</span>
               </div>
             </div>
           </div>

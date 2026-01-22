@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { QrCode, Share, MoreHorizontal, Calendar, MapPin, Tag, ExternalLink } from "lucide-react"
+import { Share, MoreHorizontal, Calendar, MapPin, Tag, ExternalLink } from "lucide-react"
 import Image from "next/image"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { formatEventDate } from "@/lib/utils"
@@ -122,10 +122,6 @@ export function MyTickets() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <QrCode className="h-4 w-4 mr-2" />
-                      Show QR Code
-                    </DropdownMenuItem>
                     {ticket.txHash && (
                       <DropdownMenuItem asChild>
                         <a

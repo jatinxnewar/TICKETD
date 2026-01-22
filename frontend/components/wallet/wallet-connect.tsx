@@ -58,7 +58,7 @@ export function WalletConnect() {
       case 80001:
         return "MATIC"
       default:
-        return "ETH"
+        return "INR"
     }
   }
 
@@ -79,12 +79,15 @@ export function WalletConnect() {
         <div className="px-2 py-1.5">
           <div className="flex justify-between items-center">
             <span className="text-sm">Balance:</span>
-            <span className="text-sm font-medium">{balance} {chainId ? getCurrencySymbol(chainId) : "ETH"}</span>
+            <span className="text-sm font-medium">{balance} {chainId ? getCurrencySymbol(chainId) : "HBAR"}</span>
           </div>
           <div className="flex justify-between items-center mt-1">
+            <span className="text-xs text-muted-foreground">≈ ₹13,000</span>
+          </div>
+          <div className="flex justify-between items-center mt-2">
             <span className="text-sm">Network:</span>
             <Badge variant="secondary" className="text-xs">
-              {chainId ? getChainName(chainId) : "Unknown"}
+              {chainId ? getChainName(chainId) : "Hedera"}
             </Badge>
           </div>
         </div>

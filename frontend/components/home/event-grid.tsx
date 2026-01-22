@@ -36,8 +36,23 @@ export function EventGrid() {
 		return (
 			<section className="py-20 bg-gradient-to-br from-muted/30 via-background to-muted/20">
 				<div className="container mx-auto px-4 max-w-7xl">
-					<div className="text-center">
-						<p className="text-muted-foreground">Loading events...</p>
+					<div className="space-y-8">
+						<div className="space-y-4 animate-pulse">
+							<div className="h-8 w-48 bg-muted rounded"></div>
+							<div className="h-12 w-96 bg-muted rounded"></div>
+						</div>
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+							{[1, 2, 3, 4, 5, 6].map((i) => (
+								<div key={i} className="bg-card rounded-lg overflow-hidden border animate-pulse">
+									<div className="h-48 bg-muted"></div>
+									<div className="p-6 space-y-4">
+										<div className="h-6 bg-muted rounded w-3/4"></div>
+										<div className="h-4 bg-muted rounded w-1/2"></div>
+										<div className="h-4 bg-muted rounded w-2/3"></div>
+									</div>
+								</div>
+							))}
+						</div>
 					</div>
 				</div>
 			</section>
@@ -93,7 +108,7 @@ export function EventGrid() {
 					{events.map((event, index) => {
 						// Get the first ticket type for pricing
 						const firstTicket = event.ticketTypes?.[0]
-						const price = firstTicket ? `₹${firstTicket.price}` : 'TBD'
+						const price = firstTicket ? `₹${parseFloat(firstTicket.price).toLocaleString('en-IN')}` : 'TBD'
 						const attendees = event.maxAttendees || 0
 						const isTrending = index < 2 // First 2 events are trending
 						const isFillingFast = event.status === 'sold-out' || (firstTicket && firstTicket.available < firstTicket.quantity * 0.2)

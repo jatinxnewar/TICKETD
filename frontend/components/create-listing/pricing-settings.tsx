@@ -36,9 +36,9 @@ export function PricingSettings({ formData, updateFormData, onNext, onPrev }: Pr
     ? ((salePriceNumber - originalPriceNumber) / originalPriceNumber * 100).toFixed(1)
     : "0"
 
-  const platformFee = (salePriceNumber * 0.025).toFixed(4) // 2.5% platform fee
-  const royaltyFee = (salePriceNumber * (parseFloat(formData.royaltyPercentage) / 100)).toFixed(4)
-  const netReceived = (salePriceNumber - parseFloat(platformFee) - parseFloat(royaltyFee)).toFixed(4)
+  const platformFee = Math.round(salePriceNumber * 0.025) // 2.5% platform fee
+  const royaltyFee = Math.round(salePriceNumber * (parseFloat(formData.royaltyPercentage) / 100))
+  const netReceived = salePriceNumber - platformFee - royaltyFee
 
   const canProceed = formData.salePrice !== "" && 
                     parseFloat(formData.salePrice) > 0 &&
@@ -100,8 +100,8 @@ export function PricingSettings({ formData, updateFormData, onNext, onPrev }: Pr
               <Input
                 id="salePrice"
                 type="number"
-                step="0.001"
-                placeholder="0.0"
+                step="100"
+                placeholder="0"
                 value={formData.salePrice}
                 onChange={(e) => updateFormData({ salePrice: e.target.value })}
                 className="pr-12"
@@ -126,8 +126,8 @@ export function PricingSettings({ formData, updateFormData, onNext, onPrev }: Pr
                 <Input
                   id="minimumPrice"
                   type="number"
-                  step="0.001"
-                  placeholder="0.0"
+                  step="100"
+                  placeholder="0"
                   value={formData.minimumPrice}
                   onChange={(e) => updateFormData({ minimumPrice: e.target.value })}
                   className="pr-12"
@@ -195,19 +195,19 @@ export function PricingSettings({ formData, updateFormData, onNext, onPrev }: Pr
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="flex justify-between">
                     <span>Sale Price:</span>
-                    <span>{formData.salePrice} ₹</span>
+                    <span>₹{Math.round(salePriceNumber).toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
                     <span>Platform Fee (2.5%):</span>
-                    <span>-{platformFee} ₹</span>
+                    <span>-₹{platformFee.toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
                     <span>Creator Royalty ({formData.royaltyPercentage}%):</span>
-                    <span>-{royaltyFee} ₹</span>
+                    <span>-₹{royaltyFee.toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex justify-between font-medium border-t pt-1">
                     <span>You Receive:</span>
-                    <span className="text-green-600">{netReceived} ₹</span>
+                    <span className="text-green-600">₹{netReceived.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               </div>

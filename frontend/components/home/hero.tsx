@@ -10,19 +10,18 @@ export function Hero() {
     <section className="relative py-20 px-4 text-center">
       <div className="absolute inset-0 gradient-bg opacity-5" />
       <div className="relative container mx-auto max-w-4xl">
-        <div className="flex items-center justify-center mb-6">
-          <Sparkles className="h-8 w-8 text-primary mr-2" />
-          <span className="text-sm font-medium bg-primary/10 px-3 py-1 rounded-full">Web3 Ticketing Platform</span>
+        <div className="flex items-center justify-center mb-8">
+          <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Secure Event Tickets</span>
         </div>
 
         <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-          Own Your Tickets as
-          <span className="text-primary"> NFTs</span>
+          Buy, Sell & Trade
+          <span className="text-primary"> Event Tickets</span>
         </h1>
 
-        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Secure, transparent, and transferable event tickets powered by blockchain technology. Buy, sell, and trade
-          tickets with complete ownership and authenticity.
+        <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
+          Your tickets, your way. Get genuine tickets for concerts, festivals, and events across India. 
+          Resell safely when plans change.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto mb-8">

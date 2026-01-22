@@ -7,17 +7,37 @@ const router = Router();
 router.get('/', async (req, res, next) => {
   try {
     const { status, eventId } = req.query;
-    const listings = await mockDb.getListings({ status, eventId });
+    const listings = await mockDb.getListings({ status: status || 'active', eventId });
     
     // Populate with event data
     const enrichedListings = await Promise.all(
       listings.map(async (listing) => {
         const event = await mockDb.getEventById(listing.eventId);
-        return { ...listing, event };
+        const ticket = await mockDb.getTicketById(listing.ticketId);
+        return { ...listing, event, ticket };
       })
     );
     
     res.json({ success: true, listings: enrichedListings });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/marketplace/:id - Get single listing
+router.get('/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const listing = await mockDb.getListingById(id);
+    
+    if (!listing) {
+      return res.status(404).json({ success: false, error: 'Listing not found' });
+    }
+    
+    const event = await mockDb.getEventById(listing.eventId);
+    const ticket = await mockDb.getTicketById(listing.ticketId);
+    
+    res.json({ success: true, listing: { ...listing, event, ticket } });
   } catch (error) {
     next(error);
   }
@@ -30,6 +50,77 @@ router.post('/', async (req, res, next) => {
     const listing = await mockDb.createListing(listingData);
     await mockDb.updateTicket(listingData.ticketId, { status: 'listed' });
     res.status(201).json({ success: true, listing });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/marketplace/:id/purchase - Purchase a listing
+router.post('/:id/purchase', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { buyer } = req.body;
+    
+    const listing = await mockDb.getListingById(id);
+    if (!listing || listing.status !== 'active') {
+      return res.status(400).json({ success: false, error: 'Listing not available' });
+    }
+    
+    // Update listing status
+    await mockDb.updateListing(id, { status: 'sold' });
+    
+    // Update ticket owner
+    await mockDb.updateTicket(listing.ticketId, { 
+      owner: buyer,
+      status: 'active'
+    });
+    
+    // Create transfer record
+    await mockDb.createTransfer({
+      ticketId: listing.ticketId,
+      tokenId: listing.tokenId,
+      from: listing.seller,
+      to: buyer,
+      txHash: '0x' + Math.random().toString(16).substr(2, 40),
+      type: 'resale'
+    });
+    
+    // Create notification for seller
+    await mockDb.createNotification({
+      userId: listing.seller,
+      type: 'ticket-sale',
+      title: 'Ticket Sold!',
+      message: `Your ${listing.ticketType} ticket for ${listing.eventTitle} sold for ${listing.price} ETH`
+    });
+    
+    // Create notification for buyer
+    await mockDb.createNotification({
+      userId: buyer,
+      type: 'purchase',
+      title: 'Ticket Purchased',
+      message: `You purchased a ${listing.ticketType} ticket for ${listing.eventTitle}`
+    });
+    
+    res.json({ success: true, message: 'Purchase successful' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/marketplace/:id - Cancel listing
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const listing = await mockDb.getListingById(id);
+    
+    if (!listing) {
+      return res.status(404).json({ success: false, error: 'Listing not found' });
+    }
+    
+    await mockDb.updateListing(id, { status: 'cancelled' });
+    await mockDb.updateTicket(listing.ticketId, { status: 'active' });
+    
+    res.json({ success: true, message: 'Listing cancelled' });
   } catch (error) {
     next(error);
   }

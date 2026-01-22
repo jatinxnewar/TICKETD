@@ -8,7 +8,12 @@ router.get('/', async (req, res, next) => {
     try {
         const { owner, eventId, status } = req.query;
         const tickets = await mockData_1.mockDb.getTickets({ owner, eventId, status });
-        res.json({ success: true, tickets });
+        // Enrich with event data
+        const enrichedTickets = await Promise.all(tickets.map(async (ticket) => {
+            const event = await mockData_1.mockDb.getEventById(ticket.eventId);
+            return { ...ticket, event };
+        }));
+        res.json({ success: true, tickets: enrichedTickets });
     }
     catch (error) {
         next(error);
@@ -22,7 +27,8 @@ router.get('/:id', async (req, res, next) => {
         if (!ticket) {
             return res.status(404).json({ success: false, error: 'Ticket not found' });
         }
-        res.json({ success: true, ticket });
+        const event = await mockData_1.mockDb.getEventById(ticket.eventId);
+        res.json({ success: true, ticket: { ...ticket, event } });
     }
     catch (error) {
         next(error);
@@ -31,17 +37,58 @@ router.get('/:id', async (req, res, next) => {
 // POST /api/tickets - Purchase ticket
 router.post('/', async (req, res, next) => {
     try {
-        const ticketData = req.body;
-        const ticket = await mockData_1.mockDb.createTicket(ticketData);
+        const { eventId, owner, ticketType, price } = req.body;
+        const event = await mockData_1.mockDb.getEventById(eventId);
+        if (!event) {
+            return res.status(404).json({ success: false, error: 'Event not found' });
+        }
+        // Generate tokenId
+        const tokenId = String(1000 + Math.floor(Math.random() * 9000));
+        const txHash = '0x' + Math.random().toString(16).substr(2, 40);
+        const ticket = await mockData_1.mockDb.createTicket({
+            eventId,
+            owner,
+            ticketType,
+            price,
+            tokenId,
+            transactionHash: txHash
+        });
+        // Create transfer record
+        await mockData_1.mockDb.createTransfer({
+            ticketId: ticket.id,
+            tokenId,
+            from: '0x0000000000000000000000000000000000000000',
+            to: owner,
+            txHash,
+            type: 'purchase'
+        });
         // Create notification
         await mockData_1.mockDb.createNotification({
-            userId: ticketData.owner,
+            userId: owner,
             type: 'purchase',
-            title: 'Ticket Purchased',
-            message: `You successfully purchased a ticket`,
-            metadata: { eventId: ticketData.eventId, ticketId: ticket.id }
+            title: 'Ticket Purchased Successfully',
+            message: `You successfully purchased a ${ticketType} ticket for ${event.title || event.name}`,
+            metadata: { eventId, ticketId: ticket.id }
         });
-        res.status(201).json({ success: true, ticket });
+        res.status(201).json({ success: true, ticket: { ...ticket, event } });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+// POST /api/tickets/:id/validate - Validate ticket
+router.post('/:id/validate', async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const ticket = await mockData_1.mockDb.getTicketById(id);
+        if (!ticket) {
+            return res.status(404).json({ success: false, error: 'Ticket not found' });
+        }
+        if (ticket.used) {
+            return res.status(400).json({ success: false, error: 'Ticket already used' });
+        }
+        await mockData_1.mockDb.updateTicket(id, { used: true, status: 'used' });
+        res.json({ success: true, message: 'Ticket validated successfully' });
     }
     catch (error) {
         next(error);

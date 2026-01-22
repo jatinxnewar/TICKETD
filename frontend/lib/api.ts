@@ -1,4 +1,6 @@
-// API service for backend communication
+// API service - using mock data for demo
+import { mockStore } from './mock-data'
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export interface Event {
@@ -33,19 +35,28 @@ export interface Ticket {
   ticketType: string;
   price: string;
   purchaseDate: string;
-  isUsed: boolean;
+  isUsed?: boolean;
+  used?: boolean;
+  status?: 'active' | 'listed' | 'used';
   transactionHash: string;
+  event?: Event;
 }
 
 export interface MarketplaceListing {
   _id: string;
   ticketId: string;
   eventId: string;
+  tokenId?: string;
   seller: string;
   price: string;
   originalPrice: string;
   status: 'active' | 'sold' | 'cancelled';
-  listedAt: string;
+  listingDate: string;
+  listedAt?: string;
+  ticketType?: string;
+  eventTitle?: string;
+  eventDate?: string;
+  eventImage?: string;
   event?: Event;
   ticket?: Ticket;
 }
@@ -63,201 +74,87 @@ export interface Notification {
 // Events API
 export const eventsApi = {
   async getAll(params?: { status?: string; category?: string }): Promise<Event[]> {
-    const queryParams = new URLSearchParams();
-    if (params?.status) queryParams.append('status', params.status);
-    if (params?.category) queryParams.append('category', params.category);
-    
-    const url = `${API_BASE_URL}/events${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch events: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.events || [];
+    return mockStore.getEvents()
   },
 
   async getById(id: string): Promise<Event> {
-    const response = await fetch(`${API_BASE_URL}/events/${id}`);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch event: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.event;
+    const event = await mockStore.getEventById(id)
+    if (!event) throw new Error('Event not found')
+    return event
   },
 
   async create(eventData: Partial<Event>): Promise<Event> {
-    const response = await fetch(`${API_BASE_URL}/events`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(eventData),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to create event: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.event;
+    throw new Error('Not implemented in demo')
   },
 
   async update(id: string, eventData: Partial<Event>): Promise<Event> {
-    const response = await fetch(`${API_BASE_URL}/events/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(eventData),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to update event: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.event;
+    throw new Error('Not implemented in demo')
   },
 };
 
 // Tickets API
 export const ticketsApi = {
   async getAll(params?: { owner?: string; eventId?: string }): Promise<Ticket[]> {
-    const queryParams = new URLSearchParams();
-    if (params?.owner) queryParams.append('owner', params.owner);
-    if (params?.eventId) queryParams.append('eventId', params.eventId);
-    
-    const url = `${API_BASE_URL}/tickets${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch tickets: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.tickets || [];
+    return mockStore.getTickets(params?.owner)
+  },
+
+  async getUserTickets(owner: string): Promise<Ticket[]> {
+    return mockStore.getTickets(owner)
   },
 
   async getById(id: string): Promise<Ticket> {
-    const response = await fetch(`${API_BASE_URL}/tickets/${id}`);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ticket: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.ticket;
+    const tickets = await mockStore.getTickets()
+    const ticket = tickets.find(t => t._id === id)
+    if (!ticket) throw new Error('Ticket not found')
+    return ticket
+  },
+
+  async purchase(purchaseData: { eventId: string; owner: string; ticketType: string; price: string }): Promise<Ticket> {
+    return mockStore.purchaseTicket(purchaseData.eventId, purchaseData.ticketType, purchaseData.price)
   },
 
   async create(ticketData: Partial<Ticket>): Promise<Ticket> {
-    const response = await fetch(`${API_BASE_URL}/tickets`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(ticketData),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to create ticket: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.ticket;
+    throw new Error('Not implemented in demo')
   },
 };
 
 // Marketplace API
 export const marketplaceApi = {
   async getAll(params?: { status?: string; eventId?: string }): Promise<MarketplaceListing[]> {
-    const queryParams = new URLSearchParams();
-    if (params?.status) queryParams.append('status', params.status);
-    if (params?.eventId) queryParams.append('eventId', params.eventId);
-    
-    const url = `${API_BASE_URL}/marketplace${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch marketplace listings: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.listings || [];
+    return mockStore.getListings()
   },
 
   async getById(id: string): Promise<MarketplaceListing> {
-    const response = await fetch(`${API_BASE_URL}/marketplace/${id}`);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch listing: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.listing;
+    const listings = await mockStore.getListings()
+    const listing = listings.find(l => l._id === id)
+    if (!listing) throw new Error('Listing not found')
+    return listing
   },
 
-  async create(listingData: Partial<MarketplaceListing>): Promise<MarketplaceListing> {
-    const response = await fetch(`${API_BASE_URL}/marketplace`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(listingData),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to create listing: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.listing;
+  async create(listingData: any): Promise<MarketplaceListing> {
+    return mockStore.createListing(listingData.ticketId, listingData.price)
+  },
+
+  async purchase(listingId: string, buyer: string): Promise<any> {
+    return mockStore.purchaseListing(listingId)
   },
 
   async updateStatus(id: string, status: 'active' | 'sold' | 'cancelled'): Promise<MarketplaceListing> {
-    const response = await fetch(`${API_BASE_URL}/marketplace/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ status }),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to update listing: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.listing;
+    throw new Error('Not implemented in demo')
   },
 };
 
 // Notifications API
 export const notificationsApi = {
-  async getAll(userId: string): Promise<Notification[]> {
-    const response = await fetch(`${API_BASE_URL}/notifications?userId=${userId}`);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch notifications: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.notifications || [];
+  async getAll(userId?: string): Promise<Notification[]> {
+    return Promise.resolve([])
   },
 
   async markAsRead(id: string): Promise<Notification> {
-    const response = await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
-      method: 'PATCH',
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to mark notification as read: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.notification;
+    throw new Error('Not implemented in demo')
+  },
+
+  async markAllAsRead(userId: string): Promise<void> {
+    throw new Error('Not implemented in demo')
   },
 };

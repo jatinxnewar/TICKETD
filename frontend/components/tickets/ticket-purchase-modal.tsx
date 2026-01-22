@@ -58,7 +58,7 @@ export function TicketPurchaseModal({
       const receipt = await mintTicket(
         parseInt(eventId),
         account,
-        ticket.price.replace(" ETH", "")
+        ticket.price
       )
 
       // Extract token ID from receipt events (you'll need to parse this based on your contract)
@@ -160,12 +160,12 @@ export function TicketPurchaseModal({
               </div>
               <div className="flex justify-between text-sm">
                 <span>Platform Fee (2.5%)</span>
-                <span>{(parseFloat(ticket.price) * 0.025).toFixed(4)} ETH</span>
+                <span>₹{Math.round(parseFloat(ticket.price) * 0.025).toLocaleString('en-IN')}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold">
                 <span>Total</span>
-                <span>{(parseFloat(ticket.price) * 1.025).toFixed(4)} ETH</span>
+                <span>₹{Math.round(parseFloat(ticket.price) * 1.025).toLocaleString('en-IN')}</span>
               </div>
             </div>
 
@@ -174,12 +174,12 @@ export function TicketPurchaseModal({
               <div className="p-3 bg-muted rounded-lg">
                 <div className="flex justify-between text-sm">
                   <span>Your Balance</span>
-                  <span className="font-medium">{balance} ETH</span>
+                  <span className="font-medium">₹{balance}</span>
                 </div>
                 <div className="flex justify-between text-sm mt-1">
                   <span>After Purchase</span>
                   <span className={parseFloat(balance) - parseFloat(ticket.price) * 1.025 < 0 ? "text-red-500" : ""}>
-                    {(parseFloat(balance) - parseFloat(ticket.price) * 1.025).toFixed(4)} ETH
+                    ₹{Math.round(parseFloat(balance) - parseFloat(ticket.price) * 1.025).toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>
@@ -189,7 +189,7 @@ export function TicketPurchaseModal({
             {isConnected && parseFloat(balance) < parseFloat(ticket.price) * 1.025 && (
               <Alert variant="destructive">
                 <AlertDescription>
-                  Insufficient balance. You need {(parseFloat(ticket.price) * 1.025).toFixed(4)} ETH
+                  Insufficient balance. You need ₹{Math.round(parseFloat(ticket.price) * 1.025).toLocaleString('en-IN')}
                 </AlertDescription>
               </Alert>
             )}
@@ -283,7 +283,7 @@ export function TicketPurchaseModal({
                       Processing...
                     </>
                   ) : (
-                    `Purchase for ${(parseFloat(ticket.price) * 1.025).toFixed(4)} ETH`
+                    `Purchase for ₹${Math.round(parseFloat(ticket.price) * 1.025).toLocaleString('en-IN')}`
                   )}
                 </Button>
               )}

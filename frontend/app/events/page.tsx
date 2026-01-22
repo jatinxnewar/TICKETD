@@ -35,7 +35,7 @@ export default function EventsPage() {
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">All Events</h1>
-          <p className="text-muted-foreground">Discover amazing Web3 events happening around the world</p>
+          <p className="text-muted-foreground">Discover concerts, festivals, and cultural events across India</p>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">

@@ -44,10 +44,10 @@ export function ResaleModal({
   const [resalePrice, setResalePrice] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
 
-  const originalPrice = parseFloat(ticket.originalPrice.replace(" ETH", ""))
-  const suggestedPrice = (originalPrice * 0.9).toFixed(4)
-  const platformFee = resalePrice ? (parseFloat(resalePrice) * 0.025).toFixed(4) : "0"
-  const youReceive = resalePrice ? (parseFloat(resalePrice) * 0.975).toFixed(4) : "0"
+  const originalPrice = parseFloat(ticket.originalPrice.replace(" ETH", "").replace("₹", "").replace(/,/g, ""))
+  const suggestedPrice = Math.round(originalPrice * 0.9)
+  const platformFee = resalePrice ? Math.round(parseFloat(resalePrice) * 0.025) : 0
+  const youReceive = resalePrice ? Math.round(parseFloat(resalePrice) * 0.975) : 0
 
   const handleList = async () => {
     if (!resalePrice || parseFloat(resalePrice) <= 0) {
@@ -150,12 +150,12 @@ export function ResaleModal({
 
             {/* Price Input */}
             <div className="space-y-2">
-              <Label htmlFor="resalePrice">Resale Price (ETH)</Label>
+              <Label htmlFor="resalePrice">Resale Price (INR)</Label>
               <Input
                 id="resalePrice"
                 type="number"
-                step="0.001"
-                placeholder="0.00"
+                step="100"
+                placeholder="0"
                 value={resalePrice}
                 onChange={(e) => {
                   setResalePrice(e.target.value)
@@ -168,9 +168,9 @@ export function ResaleModal({
                   variant="link"
                   size="sm"
                   className="h-auto p-0"
-                  onClick={() => setResalePrice(suggestedPrice)}
+                  onClick={() => setResalePrice(String(suggestedPrice))}
                 >
-                  {suggestedPrice} ETH
+                  ₹{suggestedPrice.toLocaleString('en-IN')}
                 </Button>
               </div>
             </div>
@@ -197,16 +197,16 @@ export function ResaleModal({
               <div className="p-3 bg-muted rounded-lg space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Listing Price</span>
-                  <span>{resalePrice} ETH</span>
+                  <span>₹{Math.round(parseFloat(resalePrice)).toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Platform Fee (2.5%)</span>
-                  <span>-{platformFee} ETH</span>
+                  <span>-₹{platformFee.toLocaleString('en-IN')}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-bold">
                   <span>You Receive</span>
-                  <span className="text-green-600 dark:text-green-400">{youReceive} ETH</span>
+                  <span className="text-green-600 dark:text-green-400">₹{youReceive.toLocaleString('en-IN')}</span>
                 </div>
               </div>
             )}

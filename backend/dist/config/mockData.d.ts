@@ -2,23 +2,26 @@ export declare const mockStore: {
     events: {
         _id: string;
         id: string;
+        title: string;
         name: string;
         description: string;
-        date: Date;
+        date: string;
+        time: string;
         venue: string;
+        location: string;
         organizer: string;
-        ticketTypes: {
-            id: string;
-            name: string;
-            price: string;
-            available: number;
-            total: number;
-        }[];
         category: string;
         image: string;
+        maxAttendees: number;
+        ticketTypes: {
+            name: string;
+            price: string;
+            quantity: number;
+            available: number;
+        }[];
         status: string;
-        createdAt: Date;
-        updatedAt: Date;
+        createdAt: string;
+        updatedAt: string;
     }[];
     tickets: {
         _id: string;
@@ -28,10 +31,11 @@ export declare const mockStore: {
         owner: string;
         ticketType: string;
         price: string;
-        purchaseDate: Date;
+        purchaseDate: string;
         status: string;
         used: boolean;
         qrCode: string;
+        transactionHash: string;
     }[];
     listings: {
         _id: string;
@@ -43,8 +47,12 @@ export declare const mockStore: {
         price: string;
         originalPrice: string;
         status: string;
-        listingDate: Date;
-        expiryDate: Date;
+        listingDate: string;
+        expiryDate: string;
+        ticketType: string;
+        eventTitle: string;
+        eventDate: string;
+        eventImage: string;
     }[];
     notifications: ({
         _id: string;
@@ -54,10 +62,11 @@ export declare const mockStore: {
         title: string;
         message: string;
         read: boolean;
-        createdAt: Date;
+        createdAt: string;
         metadata: {
             eventId: string;
             ticketId: string;
+            listingId?: undefined;
         };
     } | {
         _id: string;
@@ -67,10 +76,25 @@ export declare const mockStore: {
         title: string;
         message: string;
         read: boolean;
-        createdAt: Date;
+        createdAt: string;
         metadata: {
             eventId: string;
             ticketId?: undefined;
+            listingId?: undefined;
+        };
+    } | {
+        _id: string;
+        id: string;
+        userId: string;
+        type: string;
+        title: string;
+        message: string;
+        read: boolean;
+        createdAt: string;
+        metadata: {
+            listingId: string;
+            ticketId: string;
+            eventId?: undefined;
         };
     })[];
     transfers: {
@@ -81,7 +105,7 @@ export declare const mockStore: {
         from: string;
         to: string;
         txHash: string;
-        timestamp: Date;
+        timestamp: string;
         type: string;
     }[];
 };
@@ -89,66 +113,75 @@ export declare const mockDb: {
     getEvents: (query?: any) => Promise<{
         _id: string;
         id: string;
+        title: string;
         name: string;
         description: string;
-        date: Date;
+        date: string;
+        time: string;
         venue: string;
+        location: string;
         organizer: string;
-        ticketTypes: {
-            id: string;
-            name: string;
-            price: string;
-            available: number;
-            total: number;
-        }[];
         category: string;
         image: string;
+        maxAttendees: number;
+        ticketTypes: {
+            name: string;
+            price: string;
+            quantity: number;
+            available: number;
+        }[];
         status: string;
-        createdAt: Date;
-        updatedAt: Date;
+        createdAt: string;
+        updatedAt: string;
     }[]>;
     getEventById: (id: string) => Promise<{
         _id: string;
         id: string;
+        title: string;
         name: string;
         description: string;
-        date: Date;
+        date: string;
+        time: string;
         venue: string;
+        location: string;
         organizer: string;
-        ticketTypes: {
-            id: string;
-            name: string;
-            price: string;
-            available: number;
-            total: number;
-        }[];
         category: string;
         image: string;
+        maxAttendees: number;
+        ticketTypes: {
+            name: string;
+            price: string;
+            quantity: number;
+            available: number;
+        }[];
         status: string;
-        createdAt: Date;
-        updatedAt: Date;
+        createdAt: string;
+        updatedAt: string;
     } | undefined>;
     createEvent: (data: any) => Promise<any>;
     updateEvent: (id: string, data: any) => Promise<{
         _id: string;
         id: string;
+        title: string;
         name: string;
         description: string;
-        date: Date;
+        date: string;
+        time: string;
         venue: string;
+        location: string;
         organizer: string;
-        ticketTypes: {
-            id: string;
-            name: string;
-            price: string;
-            available: number;
-            total: number;
-        }[];
         category: string;
         image: string;
+        maxAttendees: number;
+        ticketTypes: {
+            name: string;
+            price: string;
+            quantity: number;
+            available: number;
+        }[];
         status: string;
-        createdAt: Date;
-        updatedAt: Date;
+        createdAt: string;
+        updatedAt: string;
     }> | Promise<null>;
     getTickets: (query?: any) => Promise<{
         _id: string;
@@ -158,10 +191,11 @@ export declare const mockDb: {
         owner: string;
         ticketType: string;
         price: string;
-        purchaseDate: Date;
+        purchaseDate: string;
         status: string;
         used: boolean;
         qrCode: string;
+        transactionHash: string;
     }[]>;
     getTicketById: (id: string) => Promise<{
         _id: string;
@@ -171,10 +205,11 @@ export declare const mockDb: {
         owner: string;
         ticketType: string;
         price: string;
-        purchaseDate: Date;
+        purchaseDate: string;
         status: string;
         used: boolean;
         qrCode: string;
+        transactionHash: string;
     } | undefined>;
     createTicket: (data: any) => Promise<any>;
     updateTicket: (id: string, data: any) => Promise<null> | Promise<{
@@ -185,10 +220,11 @@ export declare const mockDb: {
         owner: string;
         ticketType: string;
         price: string;
-        purchaseDate: Date;
+        purchaseDate: string;
         status: string;
         used: boolean;
         qrCode: string;
+        transactionHash: string;
     }>;
     getListings: (query?: any) => Promise<{
         _id: string;
@@ -200,8 +236,12 @@ export declare const mockDb: {
         price: string;
         originalPrice: string;
         status: string;
-        listingDate: Date;
-        expiryDate: Date;
+        listingDate: string;
+        expiryDate: string;
+        ticketType: string;
+        eventTitle: string;
+        eventDate: string;
+        eventImage: string;
     }[]>;
     getListingById: (id: string) => Promise<{
         _id: string;
@@ -213,8 +253,12 @@ export declare const mockDb: {
         price: string;
         originalPrice: string;
         status: string;
-        listingDate: Date;
-        expiryDate: Date;
+        listingDate: string;
+        expiryDate: string;
+        ticketType: string;
+        eventTitle: string;
+        eventDate: string;
+        eventImage: string;
     } | undefined>;
     createListing: (data: any) => Promise<any>;
     updateListing: (id: string, data: any) => Promise<null> | Promise<{
@@ -227,8 +271,12 @@ export declare const mockDb: {
         price: string;
         originalPrice: string;
         status: string;
-        listingDate: Date;
-        expiryDate: Date;
+        listingDate: string;
+        expiryDate: string;
+        ticketType: string;
+        eventTitle: string;
+        eventDate: string;
+        eventImage: string;
     }>;
     getNotifications: (query?: any) => Promise<({
         _id: string;
@@ -238,10 +286,11 @@ export declare const mockDb: {
         title: string;
         message: string;
         read: boolean;
-        createdAt: Date;
+        createdAt: string;
         metadata: {
             eventId: string;
             ticketId: string;
+            listingId?: undefined;
         };
     } | {
         _id: string;
@@ -251,10 +300,25 @@ export declare const mockDb: {
         title: string;
         message: string;
         read: boolean;
-        createdAt: Date;
+        createdAt: string;
         metadata: {
             eventId: string;
             ticketId?: undefined;
+            listingId?: undefined;
+        };
+    } | {
+        _id: string;
+        id: string;
+        userId: string;
+        type: string;
+        title: string;
+        message: string;
+        read: boolean;
+        createdAt: string;
+        metadata: {
+            listingId: string;
+            ticketId: string;
+            eventId?: undefined;
         };
     })[]>;
     getNotificationById: (id: string) => Promise<{
@@ -265,10 +329,11 @@ export declare const mockDb: {
         title: string;
         message: string;
         read: boolean;
-        createdAt: Date;
+        createdAt: string;
         metadata: {
             eventId: string;
             ticketId: string;
+            listingId?: undefined;
         };
     } | {
         _id: string;
@@ -278,10 +343,25 @@ export declare const mockDb: {
         title: string;
         message: string;
         read: boolean;
-        createdAt: Date;
+        createdAt: string;
         metadata: {
             eventId: string;
             ticketId?: undefined;
+            listingId?: undefined;
+        };
+    } | {
+        _id: string;
+        id: string;
+        userId: string;
+        type: string;
+        title: string;
+        message: string;
+        read: boolean;
+        createdAt: string;
+        metadata: {
+            listingId: string;
+            ticketId: string;
+            eventId?: undefined;
         };
     } | undefined>;
     createNotification: (data: any) => Promise<any>;
@@ -293,10 +373,11 @@ export declare const mockDb: {
         title: string;
         message: string;
         read: boolean;
-        createdAt: Date;
+        createdAt: string;
         metadata: {
             eventId: string;
             ticketId: string;
+            listingId?: undefined;
         };
     } | {
         _id: string;
@@ -306,10 +387,25 @@ export declare const mockDb: {
         title: string;
         message: string;
         read: boolean;
-        createdAt: Date;
+        createdAt: string;
         metadata: {
             eventId: string;
             ticketId?: undefined;
+            listingId?: undefined;
+        };
+    } | {
+        _id: string;
+        id: string;
+        userId: string;
+        type: string;
+        title: string;
+        message: string;
+        read: boolean;
+        createdAt: string;
+        metadata: {
+            listingId: string;
+            ticketId: string;
+            eventId?: undefined;
         };
     }>;
     deleteNotification: (id: string) => Promise<boolean>;
@@ -321,7 +417,7 @@ export declare const mockDb: {
         from: string;
         to: string;
         txHash: string;
-        timestamp: Date;
+        timestamp: string;
         type: string;
     }[]>;
     createTransfer: (data: any) => Promise<any>;

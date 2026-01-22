@@ -1,6 +1,19 @@
 # Ticket'D Platform - Monorepo Structure
 
-A decentralized event ticketing platform built with Next.js, Express, and Hedera smart contracts. This platform enables event organizers to create NFT-based tickets and allows users to securely buy, sell, and transfer tickets on the blockchain.
+A decentralized event ticketing platform built with Next.js, Express, and Hedera smart contracts. This platform enables event organizers to create NFT-based tickets and allows users to securely buy, sell, bid on, and transfer tickets on the blockchain.
+
+## 📚 Documentation Hub
+
+**New to TicketD? Start here:**
+- 🎬 **[DEMO_GUIDE.md](./DEMO_GUIDE.md)** - Complete demo guide with bidding system (900+ lines)
+- 🚀 **[QUICKSTART.md](./QUICKSTART.md)** - Get running in 5 minutes
+- 🗺️ **[NAVIGATION.md](./NAVIGATION.md)** - Navigate all documentation easily
+
+**For specific needs:**
+- 💰 **Bidding System** → [DEMO_GUIDE.md](./DEMO_GUIDE.md#-bidding-system)
+- 🎯 **Demo Scripts** → [DEMO_GUIDE.md](./DEMO_GUIDE.md#-demo-scripts)
+- 🔗 **Blockchain Integration** → [MVP_DEMO_GUIDE.md](./MVP_DEMO_GUIDE.md)
+- 🚢 **Deployment** → [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)
 
 ## 🚀 Quick Deploy to Hedera Testnet
 
@@ -47,13 +60,14 @@ Solidity smart contracts with Hardhat for NFT ticket minting, transfers, and mar
 ### Core Functionality
 - **Event Creation**: Create events with multiple ticket types and pricing
 - **NFT Tickets**: Blockchain-based tickets as ERC-721 tokens
-- **Ticket Purchase**: Buy tickets with cryptocurrency (ETH/MATIC)
-- **Marketplace**: Resell tickets with automated royalties
+- **Ticket Purchase**: Buy tickets with cryptocurrency (ETH/HBAR)
+- **Competitive Bidding**: Place bids on marketplace listings with real-time updates
+- **Marketplace**: Resell tickets with automated royalties and price discovery
 - **Ownership Transfer**: Transfer tickets to other users
 - **Ticket Validation**: QR code-based entry validation
-- **Real-time Notifications**: Get notified about purchases, transfers, and sales
+- **Real-time Notifications**: Get notified about purchases, bids, transfers, and sales
 - **Wallet Integration**: MetaMask and Web3 wallet support via ethers.js v6
-- **Multi-Chain Support**: Ethereum (Sepolia), Polygon (Mumbai/Mainnet)
+- **Multi-Chain Support**: Hedera Testnet, Ethereum (Sepolia), Polygon (Mumbai/Mainnet)
 
 ### Technical Features
 - **Monorepo Structure**: npm workspaces for managing multiple packages

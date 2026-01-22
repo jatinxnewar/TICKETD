@@ -1,325 +1,213 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, MapPin, Clock, Users, Globe, Twitter, MessageCircle, Share2, Heart, CheckCircle } from "lucide-react"
+import { Calendar, MapPin, Clock, Users, Share2, Heart, Info } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { formatEventDate } from "@/lib/utils"
-import { TicketPurchaseModal } from "@/components/tickets/ticket-purchase-modal"
-import { useToast } from "@/hooks/use-toast"
+import { Event } from "@/lib/api"
+import { TicketPurchaseCard } from "@/components/tickets/ticket-purchase-card"
 
 interface EventDetailProps {
-  event: {
-    id: string
-    title: string
-    description: string
-    category: string
-    location: string
-    venue: string
-    address: string
-    date: string
-    time: string
-    endTime: string
-    image: string
-    images: string[]
-    organizer: {
-      name: string
-      avatar: string
-      verified: boolean
-    }
-    ticketTypes: Array<{
-      id: string
-      name: string
-      description: string
-      price: string
-      available: number
-      total: number
-    }>
-    agenda: Array<{
-      time: string
-      title: string
-    }>
-    speakers: Array<{
-      name: string
-      role: string
-      avatar: string
-    }>
-    socialLinks: {
-      website: string
-      twitter: string
-      discord: string
-    }
-  }
+  event: Event
 }
 
 export function EventDetail({ event }: EventDetailProps) {
-  const [selectedTicket, setSelectedTicket] = useState<string | null>(null)
-  const [quantity, setQuantity] = useState(1)
-  const [showPurchaseModal, setShowPurchaseModal] = useState(false)
-  const { toast } = useToast()
+  const totalAvailable = event.ticketTypes?.reduce((sum, ticket) => sum + (ticket.available || 0), 0) || 0
+  const totalQuantity = event.ticketTypes?.reduce((sum, ticket) => sum + (ticket.quantity || 0), 0) || 0
+  const soldPercentage = totalQuantity > 0 ? Math.round(((totalQuantity - totalAvailable) / totalQuantity) * 100) : 0
 
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Hero Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        <div className="lg:col-span-2">
-          <div className="relative mb-6">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="relative rounded-xl overflow-hidden shadow-2xl">
             <Image
-              src={event.image || "/placeholder.svg"}
+              src={event.image || "/placeholder.jpg"}
               alt={event.title}
-              width={800}
-              height={400}
-              className="w-full h-64 md:h-96 object-cover rounded-lg"
+              width={1200}
+              height={600}
+              className="w-full h-64 md:h-96 object-cover"
             />
-            <Badge className="absolute top-4 left-4" variant="secondary">
-              {event.category}
-            </Badge>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-6">
+              <Badge className="mb-3 bg-background/90 backdrop-blur-sm text-foreground">
+                {event.category}
+              </Badge>
+              <h1 className="text-3xl md:text-5xl font-bold text-white drop-shadow-lg mb-2">
+                {event.title}
+              </h1>
+              <div className="flex items-center gap-2 text-white/90">
+                <Calendar className="h-4 w-4" />
+                <span className="font-medium">{formatEventDate(new Date(event.date))} • {event.time}</span>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-4">
-            <h1 className="text-3xl md:text-4xl font-bold">{event.title}</h1>
-
-            <div className="flex items-center space-x-4">
-              <Avatar>
-                <AvatarImage src={event.organizer.avatar || "/placeholder.svg"} />
-                <AvatarFallback>{event.organizer.name[0]}</AvatarFallback>
-              </Avatar>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <span className="font-medium">{event.organizer.name}</span>
-                  {event.organizer.verified && <CheckCircle className="h-4 w-4 text-blue-500" />}
+          {/* Quick Info */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Calendar className="h-5 w-5 text-primary" />
                 </div>
-                <span className="text-sm text-muted-foreground">Event Organizer</span>
-              </div>
-            </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Date & Time</p>
+                  <p className="font-semibold text-sm">{formatEventDate(new Date(event.date))}</p>
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4" />
-                <span>{formatEventDate(event.date)}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Clock className="h-4 w-4" />
-                <span>
-                  {event.time} - {event.endTime}
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <MapPin className="h-4 w-4" />
-                <span>
-                  {event.venue}, {event.location}
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Users className="h-4 w-4" />
-                <span>1,250 attending</span>
-              </div>
-            </div>
+            <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="p-2 bg-blue-500/10 rounded-lg">
+                  <MapPin className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Location</p>
+                  <p className="font-semibold text-sm truncate">{event.location}</p>
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm">
-                <Heart className="h-4 w-4 mr-2" />
-                Save
-              </Button>
-              <Button variant="outline" size="sm">
-                <Share2 className="h-4 w-4 mr-2" />
-                Share
-              </Button>
-            </div>
+            <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="p-2 bg-green-500/10 rounded-lg">
+                  <Users className="h-5 w-5 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Tickets Available</p>
+                  <p className="font-semibold text-sm">{totalAvailable} / {totalQuantity}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Progress Bar */}
+          {soldPercentage > 0 && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium">Event Popularity</span>
+                  <span className="text-sm font-bold text-primary">{soldPercentage}% Sold</span>
+                </div>
+                <div className="w-full bg-secondary rounded-full h-2.5">
+                  <div
+                    className={`h-2.5 rounded-full transition-all ${
+                      soldPercentage > 80 ? 'bg-red-500' : soldPercentage > 50 ? 'bg-orange-500' : 'bg-green-500'
+                    }`}
+                    style={{ width: `${soldPercentage}%` }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Tabs Section */}
+          <Tabs defaultValue="about" className="w-full">
+            <TabsList className="w-full justify-start">
+              <TabsTrigger value="about">About</TabsTrigger>
+              <TabsTrigger value="venue">Venue</TabsTrigger>
+              <TabsTrigger value="organizer">Organizer</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="about" className="mt-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-3 mb-4">
+                    <Info className="h-5 w-5 text-primary mt-0.5" />
+                    <div>
+                      <h3 className="font-bold text-lg mb-2">About This Event</h3>
+                      <p className="text-muted-foreground leading-relaxed">
+                        {event.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-6 border-t space-y-4">
+                    <h4 className="font-semibold">Event Highlights</h4>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary mt-1">•</span>
+                        <span>NFT-based tickets with blockchain verification</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary mt-1">•</span>
+                        <span>Secure resale marketplace available</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary mt-1">•</span>
+                        <span>Digital collectible ticket for attendees</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary mt-1">•</span>
+                        <span>Full refund available up to 48 hours before event</span>
+                      </li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="venue" className="mt-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-5 w-5 text-primary mt-0.5" />
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg mb-2">Venue Information</h3>
+                      <div className="space-y-2 text-muted-foreground">
+                        <p className="font-medium text-foreground">{event.venue}</p>
+                        <p>{event.location}</p>
+                        <p className="text-sm">Capacity: {event.maxAttendees?.toLocaleString()} attendees</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="organizer" className="mt-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-3">
+                    <Users className="h-5 w-5 text-primary mt-0.5" />
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg mb-2">Event Organizer</h3>
+                      <div className="space-y-2">
+                        <p className="font-mono text-sm text-muted-foreground">
+                          {event.organizer}
+                        </p>
+                        <Badge variant="outline">Verified Organizer</Badge>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <Button variant="outline" className="flex-1">
+              <Heart className="h-4 w-4 mr-2" />
+              Save Event
+            </Button>
+            <Button variant="outline" className="flex-1">
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
           </div>
         </div>
 
         {/* Ticket Purchase Card */}
         <div className="lg:col-span-1">
-          <Card className="card-enhanced sticky top-4">
-            <CardHeader>
-              <CardTitle>Get Tickets</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {event.ticketTypes.map((ticket) => (
-                <div
-                  key={ticket.id}
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                    selectedTicket === ticket.id ? "border-primary bg-primary/5" : "border-border"
-                  }`}
-                  onClick={() => setSelectedTicket(ticket.id)}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-medium">{ticket.name}</h4>
-                    <span className="font-bold">{ticket.price}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">{ticket.description}</p>
-                  <div className="text-sm">
-                    <span className="text-green-600">{ticket.available} available</span>
-                    <span className="text-muted-foreground"> of {ticket.total}</span>
-                  </div>
-                </div>
-              ))}
-
-              {selectedTicket && (
-                <div className="space-y-4 pt-4 border-t">
-                  <div className="flex items-center justify-between">
-                    <span>Quantity:</span>
-                    <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
-                        -
-                      </Button>
-                      <span className="w-8 text-center">{quantity}</span>
-                      <Button variant="outline" size="sm" onClick={() => setQuantity(quantity + 1)}>
-                        +
-                      </Button>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex justify-between font-bold">
-                    <span>Total:</span>
-                    <span>
-                      {(
-                        Number.parseFloat(
-                          event.ticketTypes.find((t) => t.id === selectedTicket)?.price.replace(" ETH", "") || "0",
-                        ) * quantity
-                      ).toFixed(3)}{" "}
-                      ETH
-                    </span>
-                  </div>
-
-                  <Button 
-                    className="w-full" 
-                    size="lg"
-                    onClick={() => setShowPurchaseModal(true)}
-                  >
-                    Purchase Tickets
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <TicketPurchaseCard event={event} />
         </div>
       </div>
-
-      {/* Event Details Tabs */}
-      <Tabs defaultValue="about" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="about">About</TabsTrigger>
-          <TabsTrigger value="agenda">Agenda</TabsTrigger>
-          <TabsTrigger value="speakers">Speakers</TabsTrigger>
-          <TabsTrigger value="location">Location</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="about" className="space-y-6">
-          <Card className="card-enhanced">
-            <CardHeader>
-              <CardTitle>About This Event</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground leading-relaxed">{event.description}</p>
-
-              <div className="mt-6 flex space-x-4">
-                <Button variant="outline" size="sm">
-                  <Globe className="h-4 w-4 mr-2" />
-                  Website
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Twitter className="h-4 w-4 mr-2" />
-                  Twitter
-                </Button>
-                <Button variant="outline" size="sm">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Discord
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="agenda" className="space-y-6">
-          <Card className="card-enhanced">
-            <CardHeader>
-              <CardTitle>Event Agenda</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {event.agenda.map((item, index) => (
-                  <div key={index} className="flex space-x-4 pb-4 border-b last:border-b-0">
-                    <div className="w-16 text-sm font-medium text-muted-foreground">{item.time}</div>
-                    <div className="flex-1">
-                      <h4 className="font-medium">{item.title}</h4>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="speakers" className="space-y-6">
-          <Card className="card-enhanced">
-            <CardHeader>
-              <CardTitle>Featured Speakers</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {event.speakers.map((speaker, index) => (
-                  <div key={index} className="flex items-center space-x-4">
-                    <Avatar className="h-16 w-16">
-                      <AvatarImage src={speaker.avatar || "/placeholder.svg"} />
-                      <AvatarFallback>{speaker.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h4 className="font-medium">{speaker.name}</h4>
-                      <p className="text-sm text-muted-foreground">{speaker.role}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="location" className="space-y-6">
-          <Card className="card-enhanced">
-            <CardHeader>
-              <CardTitle>Event Location</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium">{event.venue}</h4>
-                  <p className="text-muted-foreground">{event.address}</p>
-                </div>
-                <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
-                  <span className="text-muted-foreground">Map would be displayed here</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Purchase Modal */}
-      {selectedTicket && (
-        <TicketPurchaseModal
-          open={showPurchaseModal}
-          onOpenChange={setShowPurchaseModal}
-          ticket={event.ticketTypes.find((t) => t.id === selectedTicket)!}
-          eventId={event.id}
-          eventTitle={event.title}
-          onSuccess={(txHash, tokenId) => {
-            toast({
-              title: "Ticket Purchased!",
-              description: `Your ticket NFT #${tokenId} has been minted successfully.`,
-            })
-            setSelectedTicket(null)
-          }}
-        />
-      )}
     </div>
   )
 }
