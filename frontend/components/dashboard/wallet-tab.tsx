@@ -1,114 +1,125 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { ticketsApi, Ticket } from "@/lib/api"
-import { TicketVault } from "@/components/wallet/ticket-vault"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Wallet, Copy, ExternalLink, CheckCircle2 } from "lucide-react"
+import { Wallet, Copy, Check, ShieldCheck } from "lucide-react"
+import { ticketsApi, marketplaceApi } from "@/lib/api"
+import { CURRENT_USER, CURRENT_USER_ID } from "@/lib/user"
+import { formatINR } from "@/lib/utils"
+import { useStoreData } from "@/hooks/useStoreData"
+import { useToast } from "@/hooks/use-toast"
 
 export function WalletTab() {
-  const [tickets, setTickets] = useState<Ticket[]>([])
-  const [loading, setLoading] = useState(true)
-  const mockWalletAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+  const [copied, setCopied] = useState(false)
+  const { toast } = useToast()
 
-  useEffect(() => {
-    const loadTickets = async () => {
-      try {
-        const userTickets = await ticketsApi.getUserTickets(mockWalletAddress)
-        setTickets(userTickets)
-      } catch (error) {
-        console.error('Failed to load tickets:', error)
-      } finally {
-        setLoading(false)
-      }
+  const { data, loading } = useStoreData(async () => {
+    const [tickets, listings] = await Promise.all([
+      ticketsApi.getUserTickets(CURRENT_USER_ID),
+      marketplaceApi.getMine(),
+    ])
+    return { tickets, listings }
+  }, "Could not load your wallet.")
+
+  const tickets = data?.tickets ?? []
+  const listings = data?.listings ?? []
+
+  const holdingsValue = tickets
+    .filter(t => t.status !== "used" && !t.used)
+    .reduce((sum, t) => sum + (parseFloat(t.price) || 0), 0)
+
+  const copyAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(CURRENT_USER.address)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toast({
+        title: "Couldn't copy",
+        description: "Your browser blocked clipboard access.",
+        variant: "destructive",
+      })
     }
-
-    loadTickets()
-  }, [])
-
-  const totalValue = tickets.reduce((sum, ticket) => sum + parseFloat(ticket.price), 0)
-
-  const copyAddress = () => {
-    navigator.clipboard.writeText(mockWalletAddress)
-    alert('Wallet address copied!')
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <div className="space-y-4">
+        <div className="h-48 rounded-xl border bg-muted/40 animate-pulse" />
+        <div className="h-32 rounded-xl border bg-muted/40 animate-pulse" />
       </div>
     )
   }
 
+  const breakdown = [
+    { label: "Tickets held", value: String(tickets.length) },
+    { label: "Holdings value", value: formatINR(holdingsValue) },
+    { label: "Active listings", value: String(listings.filter(l => l.status === "active").length) },
+  ]
+
   return (
     <div className="space-y-6">
-      {/* Wallet Info Card */}
-      <Card className="bg-gradient-to-br from-primary/10 via-purple-500/10 to-blue-500/10 border-2 border-primary/20">
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Wallet className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-semibold">Connected Wallet</h3>
-              </div>
-              <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
-                <CheckCircle2 className="h-3 w-3 mr-1" />
-                MetaMask Connected
-              </Badge>
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Wallet className="h-5 w-5 text-primary" aria-hidden="true" />
+                {CURRENT_USER.name}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Demo account</p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(`https://etherscan.io/address/${mockWalletAddress}`, '_blank')}
-            >
-              <ExternalLink className="h-4 w-4" />
-            </Button>
+            <Badge variant="outline" className="gap-1 flex-shrink-0">
+              <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+              Verified
+            </Badge>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-5">
+          <div className="space-y-1.5">
+            <span className="text-sm text-muted-foreground">Wallet address</span>
+            <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-3">
+              <code className="flex-1 min-w-0 truncate font-mono text-sm">
+                {CURRENT_USER.address}
+              </code>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={copyAddress}
+                aria-label="Copy wallet address"
+                className="flex-shrink-0"
+              >
+                {copied ? (
+                  <Check className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                ) : (
+                  <Copy className="h-4 w-4" aria-hidden="true" />
+                )}
+              </Button>
+            </div>
           </div>
 
-          <div className="space-y-4">
-            {/* Wallet Address */}
-            <div>
-              <label className="text-sm text-muted-foreground mb-1 block">Wallet Address</label>
-              <div className="flex items-center gap-2 p-3 bg-background rounded-lg border">
-                <code className="flex-1 text-sm font-mono truncate">
-                  {mockWalletAddress}
-                </code>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={copyAddress}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
+          <dl className="grid grid-cols-3 gap-4 border-t pt-5">
+            {breakdown.map(item => (
+              <div key={item.label}>
+                <dt className="text-xs text-muted-foreground">{item.label}</dt>
+                <dd className="text-xl font-bold tracking-tight tabular-nums mt-1">{item.value}</dd>
               </div>
-            </div>
-
-            {/* Wallet Stats */}
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-primary">{tickets.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">NFT Tickets</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">{totalValue.toFixed(3)}</p>
-                <p className="text-xs text-muted-foreground mt-1">Total Value (INR)</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">
-                  {tickets.filter(t => t.status === 'active' || !t.status).length}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">Active</p>
-              </div>
-            </div>
-          </div>
+            ))}
+          </dl>
         </CardContent>
       </Card>
 
-      {/* Ticket Vault */}
-      <TicketVault tickets={tickets} />
+      <Card className="bg-muted/30">
+        <CardContent className="p-5">
+          <p className="text-sm text-muted-foreground">
+            This is a demonstration wallet. Balances and transaction references are simulated locally
+            and no real funds or on-chain assets are involved.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -1,7 +1,5 @@
-// API service - using mock data for demo
+// API service - using an in-browser mock store for the demo build.
 import { mockStore } from './mock-data'
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export interface Event {
   _id: string;
@@ -61,16 +59,6 @@ export interface MarketplaceListing {
   ticket?: Ticket;
 }
 
-export interface Notification {
-  _id: string;
-  userId: string;
-  type: 'ticket-purchase' | 'ticket-sale' | 'event-reminder' | 'price-alert';
-  title: string;
-  message: string;
-  read: boolean;
-  createdAt: string;
-}
-
 // Events API
 export const eventsApi = {
   async getAll(params?: { status?: string; category?: string }): Promise<Event[]> {
@@ -84,11 +72,25 @@ export const eventsApi = {
   },
 
   async create(eventData: Partial<Event>): Promise<Event> {
-    throw new Error('Not implemented in demo')
-  },
-
-  async update(id: string, eventData: Partial<Event>): Promise<Event> {
-    throw new Error('Not implemented in demo')
+    const now = new Date().toISOString()
+    const event: Event = {
+      _id: `e${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      title: eventData.title || 'Untitled Event',
+      description: eventData.description || '',
+      category: eventData.category || 'Other',
+      date: eventData.date || now,
+      time: eventData.time || '',
+      location: eventData.location || '',
+      venue: eventData.venue || '',
+      image: eventData.image || '/placeholder.jpg',
+      organizer: eventData.organizer || 'Independent Organizer',
+      maxAttendees: eventData.maxAttendees ?? 0,
+      ticketTypes: eventData.ticketTypes?.length ? eventData.ticketTypes : [],
+      status: 'active',
+      createdAt: now,
+      updatedAt: now,
+    }
+    return mockStore.createEvent(event)
   },
 };
 
@@ -112,10 +114,6 @@ export const ticketsApi = {
   async purchase(purchaseData: { eventId: string; owner: string; ticketType: string; price: string }): Promise<Ticket> {
     return mockStore.purchaseTicket(purchaseData.eventId, purchaseData.ticketType, purchaseData.price)
   },
-
-  async create(ticketData: Partial<Ticket>): Promise<Ticket> {
-    throw new Error('Not implemented in demo')
-  },
 };
 
 // Marketplace API
@@ -131,30 +129,19 @@ export const marketplaceApi = {
     return listing
   },
 
-  async create(listingData: any): Promise<MarketplaceListing> {
+  async getMine(): Promise<MarketplaceListing[]> {
+    return mockStore.getMyListings()
+  },
+
+  async create(listingData: { ticketId: string; price: string }): Promise<MarketplaceListing> {
     return mockStore.createListing(listingData.ticketId, listingData.price)
   },
 
-  async purchase(listingId: string, buyer: string): Promise<any> {
+  async purchase(listingId: string, buyer: string): Promise<Ticket> {
     return mockStore.purchaseListing(listingId)
   },
 
-  async updateStatus(id: string, status: 'active' | 'sold' | 'cancelled'): Promise<MarketplaceListing> {
-    throw new Error('Not implemented in demo')
-  },
-};
-
-// Notifications API
-export const notificationsApi = {
-  async getAll(userId?: string): Promise<Notification[]> {
-    return Promise.resolve([])
-  },
-
-  async markAsRead(id: string): Promise<Notification> {
-    throw new Error('Not implemented in demo')
-  },
-
-  async markAllAsRead(userId: string): Promise<void> {
-    throw new Error('Not implemented in demo')
+  async cancel(listingId: string): Promise<MarketplaceListing> {
+    return mockStore.cancelListing(listingId)
   },
 };

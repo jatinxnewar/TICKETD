@@ -1,72 +1,134 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { Suspense, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/layout/header"
+import { Footer } from "@/components/layout/footer"
 import { EventFilters } from "@/components/events/event-filters"
 import { EventCard } from "@/components/events/event-card"
-import { Footer } from "@/components/layout/footer"
-import { eventsApi, Event } from "@/lib/api"
+import { Button } from "@/components/ui/button"
+import { eventsApi } from "@/lib/api"
+import { useStoreData } from "@/hooks/useStoreData"
 
-export default function EventsPage() {
-  const [events, setEvents] = useState<Event[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+const ALL = "All"
 
-  useEffect(() => {
-    async function fetchEvents() {
-      try {
-        setLoading(true)
-        const data = await eventsApi.getAll({ status: 'active' })
-        setEvents(data)
-      } catch (err) {
-        console.error('Failed to fetch events:', err)
-        setError('Failed to load events')
-      } finally {
-        setLoading(false)
-      }
-    }
+function EventsView() {
+  const searchParams = useSearchParams()
+  const query = (searchParams.get("q") || "").trim().toLowerCase()
 
-    fetchEvents()
-  }, [])
+  const [category, setCategory] = useState<string>(ALL)
+  const [city, setCity] = useState<string>(ALL)
+
+  const { data, loading, error, refresh } = useStoreData(
+    () => eventsApi.getAll(),
+    "Could not load events.",
+  )
+  const events = useMemo(() => data ?? [], [data])
+
+  const categories = useMemo(
+    () => [ALL, ...Array.from(new Set(events.map(e => e.category))).sort()],
+    [events],
+  )
+  const cities = useMemo(
+    () => [ALL, ...Array.from(new Set(events.map(e => e.location.split(",")[0].trim()))).sort()],
+    [events],
+  )
+
+  const visible = events.filter(event => {
+    const matchesQuery =
+      !query ||
+      event.title.toLowerCase().includes(query) ||
+      event.location.toLowerCase().includes(query) ||
+      event.category.toLowerCase().includes(query) ||
+      event.venue.toLowerCase().includes(query)
+
+    const matchesCategory = category === ALL || event.category === category
+    const matchesCity = city === ALL || event.location.split(",")[0].trim() === city
+
+    return matchesQuery && matchesCategory && matchesCity
+  })
+
+  const filtersDirty = category !== ALL || city !== ALL
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">
+          {query ? `Results for “${searchParams.get("q")}”` : "All Events"}
+        </h1>
+        <p className="mt-1 text-muted-foreground">
+          Discover concerts, festivals and cultural events across India.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-8 lg:flex-row">
+        <aside className="lg:w-64 lg:flex-shrink-0">
+          <EventFilters
+            categories={categories}
+            cities={cities}
+            category={category}
+            city={city}
+            onCategoryChange={setCategory}
+            onCityChange={setCity}
+            onClear={() => {
+              setCategory(ALL)
+              setCity(ALL)
+            }}
+            canClear={filtersDirty}
+          />
+        </aside>
+
+        <div className="min-w-0 flex-1">
+          {loading ? (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-[24rem] rounded-xl border bg-muted/40 animate-pulse" />
+              ))}
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center py-20 text-center">
+              <h2 className="text-lg font-semibold">Couldn't load events</h2>
+              <p className="mt-1 mb-6 text-muted-foreground">{error}</p>
+              <Button variant="outline" onClick={refresh}>
+                Try again
+              </Button>
+            </div>
+          ) : visible.length === 0 ? (
+            <div className="flex flex-col items-center py-20 text-center">
+              <h2 className="text-lg font-semibold">No events found</h2>
+              <p className="mt-1 max-w-sm text-muted-foreground">
+                {query
+                  ? "Try a different search term, or clear your filters."
+                  : "Try widening your filters to see more events."}
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="mb-6 text-sm text-muted-foreground">
+                {visible.length} event{visible.length === 1 ? "" : "s"} found
+              </p>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {visible.map(event => (
+                  <EventCard key={event._id} event={event} />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
+
+export default function EventsPage() {
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
       <Header />
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">All Events</h1>
-          <p className="text-muted-foreground">Discover concerts, festivals, and cultural events across India</p>
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-8">
-          <aside className="lg:w-64">
-            <EventFilters />
-          </aside>
-
-          <div className="flex-1">
-            {loading ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">Loading events...</p>
-              </div>
-            ) : error ? (
-              <div className="text-center py-12 text-destructive">
-                <p>{error}</p>
-              </div>
-            ) : (
-              <>
-                <div className="mb-6 flex justify-between items-center">
-                  <p className="text-muted-foreground">{events.length} events found</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {events.map((event) => (
-                    <EventCard key={event._id} event={event} />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+      <main id="main-content" className="container mx-auto flex-1 px-4 py-8">
+        {/* useSearchParams requires a Suspense boundary during prerender. */}
+        <Suspense fallback={<div className="h-96 rounded-xl border bg-muted/40 animate-pulse" />}>
+          <EventsView />
+        </Suspense>
       </main>
       <Footer />
     </div>

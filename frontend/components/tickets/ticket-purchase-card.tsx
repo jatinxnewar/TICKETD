@@ -5,11 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { ShoppingCart, Wallet, CheckCircle2, AlertCircle } from "lucide-react"
+import { ShoppingCart, CheckCircle2, AlertCircle } from "lucide-react"
 import { Event, ticketsApi } from "@/lib/api"
+import { CURRENT_USER_ID } from "@/lib/user"
+import { formatINR } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 import { TransactionModal } from "@/components/transactions/transaction-modal"
+
+/** Per-order cap, mirroring the "max per transaction" rule shown at checkout. */
+const MAX_PER_ORDER = 10
 
 interface TicketPurchaseCardProps {
   event: Event
@@ -18,53 +23,46 @@ interface TicketPurchaseCardProps {
 export function TicketPurchaseCard({ event }: TicketPurchaseCardProps) {
   const [selectedTicket, setSelectedTicket] = useState<number | null>(null)
   const [quantity, setQuantity] = useState(1)
-  const [isPurchasing, setIsPurchasing] = useState(false)
   const [showTransactionModal, setShowTransactionModal] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
 
   const selectedTicketType = selectedTicket !== null ? event.ticketTypes[selectedTicket] : null
-  const totalPrice = selectedTicketType ? (parseFloat(selectedTicketType.price) * quantity).toLocaleString('en-IN') : "0"
+  const maxQuantity = selectedTicketType
+    ? Math.max(1, Math.min(selectedTicketType.available || 0, MAX_PER_ORDER))
+    : 1
+  const totalPrice = selectedTicketType ? (parseFloat(selectedTicketType.price) || 0) * quantity : 0
 
-  const handlePurchase = async () => {
-    // Open the transaction modal instead of direct purchase
-    setShowTransactionModal(true)
+  // Re-clamp quantity on tier change: moving from a tier with 50 left to one
+  // with 2 left must not carry the larger quantity over.
+  const selectTier = (index: number) => {
+    const tier = event.ticketTypes[index]
+    if (!tier || (tier.available || 0) <= 0) return
+    setSelectedTicket(index)
+    setQuantity(q => Math.min(q, Math.max(1, Math.min(tier.available, MAX_PER_ORDER))))
   }
 
-  const handleTransactionSuccess = async (txHash: string, tokenId: string) => {
+  const handleTransactionSuccess = async () => {
     if (!selectedTicketType) return
-    
-    // Mock wallet address - in production this would come from wallet connection
-    const mockWalletAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
 
-    try {
-      const purchasePromises = []
-      for (let i = 0; i < quantity; i++) {
-        purchasePromises.push(
-          ticketsApi.purchase({
-            eventId: event._id,
-            owner: mockWalletAddress,
-            ticketType: selectedTicketType.name,
-            price: selectedTicketType.price,
-          })
-        )
-      }
-
-      await Promise.all(purchasePromises)
-
-      toast({
-        title: "🎉 Purchase Successful!",
-        description: `Your NFT ticket ${tokenId} has been added to your wallet`,
+    // Sequential, not Promise.all: each purchase decrements availability, and a
+    // parallel batch could slip past the sold-out guard.
+    for (let i = 0; i < quantity; i++) {
+      await ticketsApi.purchase({
+        eventId: event._id,
+        owner: CURRENT_USER_ID,
+        ticketType: selectedTicketType.name,
+        price: selectedTicketType.price,
       })
-
-      // Redirect to dashboard after short delay
-      setTimeout(() => {
-        setShowTransactionModal(false)
-        router.push('/dashboard')
-      }, 1500)
-    } catch (error) {
-      console.error('Purchase failed:', error)
     }
+
+    toast({
+      title: "Purchase confirmed",
+      description: `${quantity} ${selectedTicketType.name} ticket${quantity > 1 ? "s" : ""} added to your account.`,
+    })
+
+    setShowTransactionModal(false)
+    router.push("/dashboard")
   }
 
   return (
@@ -83,47 +81,55 @@ export function TicketPurchaseCard({ event }: TicketPurchaseCardProps) {
             const almostSoldOut = isAvailable && (ticket.available || 0) < (ticket.quantity || 0) * 0.2
 
             return (
-              <div
+              <button
                 key={index}
-                className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                type="button"
+                disabled={soldOut}
+                aria-pressed={selectedTicket === index}
+                className={`w-full text-left p-4 border-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                   selectedTicket === index
-                    ? "border-primary bg-primary/5 shadow-md scale-[1.02]"
+                    ? "border-primary bg-primary/5"
                     : soldOut
-                    ? "border-border bg-secondary/20 cursor-not-allowed opacity-60"
-                    : "border-border hover:border-primary/50 hover:shadow-sm"
+                    ? "border-border bg-muted/40 opacity-60 cursor-not-allowed"
+                    : "border-border hover:border-primary/50"
                 }`}
-                onClick={() => !soldOut && setSelectedTicket(index)}
+                onClick={() => selectTier(index)}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex-1">
+                <div className="flex justify-between items-start gap-3 mb-2">
+                  <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-base flex items-center gap-2">
-                      {ticket.name}
-                      {selectedTicket === index && <CheckCircle2 className="h-4 w-4 text-primary" />}
+                      <span className="truncate">{ticket.name}</span>
+                      {selectedTicket === index && (
+                        <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" aria-hidden="true" />
+                      )}
                     </h4>
-                    {almostSoldOut && !soldOut && (
-                      <Badge variant="destructive" className="mt-1 text-xs">
-                        <AlertCircle className="h-3 w-3 mr-1" />
-                        Almost Sold Out
+                    {soldOut ? (
+                      <Badge variant="secondary" className="mt-1.5 text-xs">
+                        Sold out
                       </Badge>
-                    )}
-                    {soldOut && (
-                      <Badge variant="secondary" className="mt-1 text-xs">
-                        Sold Out
+                    ) : almostSoldOut ? (
+                      <Badge variant="destructive" className="mt-1.5 text-xs">
+                        <AlertCircle className="h-3 w-3 mr-1" aria-hidden="true" />
+                        Almost sold out
                       </Badge>
-                    )}
+                    ) : null}
                   </div>
-                  <div className="text-right">
-                    <span className="font-bold text-lg text-primary">₹{parseFloat(ticket.price).toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center text-sm mt-3 pt-3 border-t border-border/50">
-                  <span className="text-muted-foreground">Available:</span>
-                  <span className={`font-medium ${soldOut ? 'text-destructive' : almostSoldOut ? 'text-orange-500' : 'text-green-600'}`}>
-                    {ticket.available} / {ticket.quantity}
+                  <span className="font-bold text-lg text-primary tabular-nums flex-shrink-0">
+                    {formatINR(ticket.price)}
                   </span>
                 </div>
-              </div>
+
+                <div className="flex justify-between items-center text-sm mt-3 pt-3 border-t border-border/50">
+                  <span className="text-muted-foreground">Available</span>
+                  <span
+                    className={`font-medium tabular-nums ${
+                      soldOut ? "text-destructive" : almostSoldOut ? "text-amber-600" : "text-emerald-600"
+                    }`}
+                  >
+                    {(ticket.available || 0).toLocaleString("en-IN")} left
+                  </span>
+                </div>
+              </button>
             )
           })
         ) : (
@@ -136,60 +142,70 @@ export function TicketPurchaseCard({ event }: TicketPurchaseCardProps) {
         {selectedTicket !== null && selectedTicketType && (
           <div className="space-y-4 pt-4 border-t-2">
             <div className="flex items-center justify-between">
-              <span className="font-medium">Quantity:</span>
-              <div className="flex items-center space-x-3">
+              <span className="font-medium">Quantity</span>
+              <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  onClick={() => setQuantity(q => Math.max(1, q - 1))}
                   disabled={quantity <= 1}
                   className="h-9 w-9 p-0"
+                  aria-label="Decrease quantity"
                 >
-                  -
+                  −
                 </Button>
-                <span className="w-12 text-center font-semibold text-lg">{quantity}</span>
+                <span className="w-10 text-center font-semibold text-lg tabular-nums" aria-live="polite">
+                  {quantity}
+                </span>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setQuantity(Math.min(selectedTicketType.available || 1, quantity + 1))}
-                  disabled={quantity >= (selectedTicketType.available || 1)}
+                  onClick={() => setQuantity(q => Math.min(maxQuantity, q + 1))}
+                  disabled={quantity >= maxQuantity}
                   className="h-9 w-9 p-0"
+                  aria-label="Increase quantity"
                 >
                   +
                 </Button>
               </div>
             </div>
+            {quantity >= maxQuantity && (
+              <p className="text-xs text-muted-foreground text-right -mt-2">
+                {maxQuantity === MAX_PER_ORDER
+                  ? `Maximum ${MAX_PER_ORDER} tickets per order`
+                  : "That's all the tickets left in this tier"}
+              </p>
+            )}
 
             <Separator />
 
-            <div className="bg-secondary/30 rounded-lg p-4 space-y-2">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Price per ticket:</span>
-                <span className="font-medium">₹{parseFloat(selectedTicketType.price).toLocaleString('en-IN')}</span>
+                <span className="text-muted-foreground">Price per ticket</span>
+                <span className="font-medium tabular-nums">{formatINR(selectedTicketType.price)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Quantity:</span>
-                <span className="font-medium">×{quantity}</span>
+                <span className="text-muted-foreground">Quantity</span>
+                <span className="font-medium tabular-nums">× {quantity}</span>
               </div>
               <Separator className="my-2" />
-              <div className="flex justify-between items-center">
-                <span className="font-bold text-lg">Total:</span>
-                <span className="font-bold text-2xl text-primary">₹{totalPrice}</span>
+              <div className="flex justify-between items-baseline">
+                <span className="font-bold text-lg">Total</span>
+                <span className="font-bold text-2xl text-primary tabular-nums">{formatINR(totalPrice)}</span>
               </div>
             </div>
 
             <Button
               className="w-full h-12 text-base font-semibold"
               size="lg"
-              onClick={handlePurchase}
-              disabled={isPurchasing}
+              onClick={() => setShowTransactionModal(true)}
             >
-              <Wallet className="h-5 w-5 mr-2" />
-              Purchase {quantity} Ticket{quantity > 1 ? 's' : ''}
+              <ShoppingCart className="h-5 w-5 mr-2" aria-hidden="true" />
+              Buy {quantity} ticket{quantity > 1 ? "s" : ""}
             </Button>
 
             <p className="text-xs text-center text-muted-foreground">
-              By purchasing, you agree to our terms and conditions
+              By purchasing, you agree to our terms and conditions.
             </p>
           </div>
         )}
@@ -202,6 +218,7 @@ export function TicketPurchaseCard({ event }: TicketPurchaseCardProps) {
             eventTitle={event.title}
             ticketType={selectedTicketType.name}
             price={selectedTicketType.price}
+            quantity={quantity}
             onSuccess={handleTransactionSuccess}
           />
         )}

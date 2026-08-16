@@ -1,87 +1,55 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tag, Calendar, MapPin, Ticket as TicketIcon, TrendingUp } from "lucide-react"
+import { Calendar, MapPin, Ticket as TicketIcon, TrendingUp } from "lucide-react"
 import Image from "next/image"
-import { formatEventDate } from "@/lib/utils"
+import { formatEventDate, formatINR } from "@/lib/utils"
 import { ticketsApi, Ticket, marketplaceApi } from "@/lib/api"
+import { CURRENT_USER_ID } from "@/lib/user"
 import { useToast } from "@/hooks/use-toast"
+import { useStoreData } from "@/hooks/useStoreData"
 import { useRouter } from "next/navigation"
 import { ListForResaleModal } from "@/components/marketplace/list-for-resale-modal"
 
 export function MyTicketsTab() {
-  const [tickets, setTickets] = useState<Ticket[]>([])
-  const [loading, setLoading] = useState(true)
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
   const [showResaleModal, setShowResaleModal] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
 
-  // Mock wallet address - in production this would come from wallet connection
-  const mockWalletAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
-
-  useEffect(() => {
-    loadUserTickets()
-  }, [])
-
-  const loadUserTickets = async () => {
-    try {
-      setLoading(true)
-      const data = await ticketsApi.getUserTickets(mockWalletAddress)
-      setTickets(data)
-    } catch (error) {
-      console.error('Failed to load tickets:', error)
-      toast({
-        title: "Error loading tickets",
-        description: "Please try again later",
-        variant: "destructive"
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { data, loading, refresh } = useStoreData(
+    () => ticketsApi.getUserTickets(CURRENT_USER_ID),
+    "Could not load your tickets.",
+  )
+  const tickets = data ?? []
 
   const handleListForResale = (ticket: Ticket) => {
     setSelectedTicket(ticket)
     setShowResaleModal(true)
   }
 
-  const handleResaleSuccess = async (listingId: string, price: string) => {
-    try {
-      const resalePrice = price
+  const handleResaleSuccess = async (price: string) => {
+    if (!selectedTicket) return
 
-      await marketplaceApi.create({
-        ticketId: selectedTicket!._id,
-        tokenId: selectedTicket!.tokenId,
-        eventId: selectedTicket!.eventId,
-        seller: mockWalletAddress,
-        price: resalePrice,
-        originalPrice: selectedTicket!.price,
-        ticketType: selectedTicket!.ticketType,
-        eventTitle: selectedTicket!.event?.title || 'Event',
-        eventDate: selectedTicket!.event?.date || '',
-        eventImage: selectedTicket!.event?.image || ''
-      })
+    try {
+      await marketplaceApi.create({ ticketId: selectedTicket._id, price })
 
       toast({
-        title: "✅ Listed Successfully!",
-        description: `Your ticket is now listed for ₹${resalePrice}`,
+        title: "Listed successfully",
+        description: `Your ticket is now on the marketplace for ${formatINR(price)}.`,
       })
 
       setShowResaleModal(false)
       setSelectedTicket(null)
-      
-      // Reload tickets
-      await loadUserTickets()
+      refresh()
     } catch (error) {
-      console.error('Failed to list ticket:', error)
       toast({
-        title: "Listing Failed",
-        description: "Please try again later",
-        variant: "destructive"
+        title: "Listing failed",
+        description: error instanceof Error ? error.message : "Please try again later.",
+        variant: "destructive",
       })
     }
   }
@@ -118,7 +86,7 @@ export function MyTicketsTab() {
           <h2 className="text-2xl font-bold">My NFT Tickets</h2>
           <p className="text-muted-foreground">{tickets.length} ticket{tickets.length !== 1 ? 's' : ''} owned</p>
         </div>
-        <Button variant="outline" onClick={loadUserTickets}>
+        <Button variant="outline" onClick={refresh}>
           Refresh
         </Button>
       </div>
@@ -163,7 +131,7 @@ export function MyTicketsTab() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center justify-between">
                   <span className="font-semibold">{ticket.ticketType}</span>
-                  <span className="text-primary font-bold">₹{ticket.price}</span>
+                  <span className="text-primary font-bold">{formatINR(ticket.price)}</span>
                 </CardTitle>
               </CardHeader>
 

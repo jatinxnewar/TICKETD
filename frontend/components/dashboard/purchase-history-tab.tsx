@@ -1,41 +1,29 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Calendar, MapPin, ExternalLink, CheckCircle2 } from "lucide-react"
-import { ticketsApi, Ticket } from "@/lib/api"
-import { formatEventDate } from "@/lib/utils"
+import { Calendar, MapPin, Receipt } from "lucide-react"
+import { ticketsApi } from "@/lib/api"
+import { CURRENT_USER_ID } from "@/lib/user"
+import { formatEventDate, formatEventDateTime, formatINR } from "@/lib/utils"
+import { useStoreData } from "@/hooks/useStoreData"
 
 export function PurchaseHistoryTab() {
-  const [tickets, setTickets] = useState<Ticket[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data, loading } = useStoreData(
+    () => ticketsApi.getUserTickets(CURRENT_USER_ID),
+    "Could not load your purchase history.",
+  )
 
-  useEffect(() => {
-    const loadHistory = async () => {
-      try {
-        const mockWalletAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
-        const userTickets = await ticketsApi.getUserTickets(mockWalletAddress)
-        // Sort by purchase date, newest first
-        const sorted = userTickets.sort((a, b) => 
-          new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime()
-        )
-        setTickets(sorted)
-      } catch (error) {
-        console.error('Failed to load purchase history:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadHistory()
-  }, [])
+  const tickets = [...(data ?? [])].sort(
+    (a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime(),
+  )
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-28 rounded-xl border bg-muted/40 animate-pulse" />
+        ))}
       </div>
     )
   }
@@ -43,154 +31,101 @@ export function PurchaseHistoryTab() {
   if (tickets.length === 0) {
     return (
       <Card>
-        <CardContent className="text-center py-16">
-          <h3 className="text-xl font-semibold mb-2">No Purchase History</h3>
-          <p className="text-muted-foreground">Your ticket purchases will appear here</p>
+        <CardContent className="flex flex-col items-center text-center py-16 px-6">
+          <span className="rounded-full bg-muted p-4 mb-4">
+            <Receipt className="h-7 w-7 text-muted-foreground" aria-hidden="true" />
+          </span>
+          <h3 className="text-lg font-semibold mb-1">No purchases yet</h3>
+          <p className="text-muted-foreground max-w-sm">
+            Once you buy a ticket, the receipt and transaction reference will show up here.
+          </p>
         </CardContent>
       </Card>
     )
   }
 
-  const totalSpent = tickets.reduce((sum, ticket) => sum + parseFloat(ticket.price), 0)
+  const totalSpent = tickets.reduce((sum, t) => sum + (parseFloat(t.price) || 0), 0)
+  const activeCount = tickets.filter(t => t.status !== "used" && !t.used).length
+
+  const summary = [
+    { label: "Purchases", value: String(tickets.length) },
+    { label: "Total spent", value: formatINR(totalSpent) },
+    { label: "Still valid", value: String(activeCount) },
+  ]
 
   return (
     <div className="space-y-6">
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
-          <CardContent className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-1">Total Purchases</p>
-              <p className="text-3xl font-bold text-primary">{tickets.length}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5">
-          <CardContent className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-1">Total Spent</p>
-              <p className="text-3xl font-bold text-green-600">₹{totalSpent.toFixed(2)}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5">
-          <CardContent className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-1">Active Tickets</p>
-              <p className="text-3xl font-bold text-blue-600">
-                {tickets.filter(t => t.status === 'active' || !t.status).length}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {summary.map(item => (
+          <Card key={item.label}>
+            <CardContent className="p-5">
+              <p className="text-sm text-muted-foreground">{item.label}</p>
+              <p className="text-2xl font-bold tracking-tight tabular-nums mt-1">{item.value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Transaction History */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-semibold">Transaction History</h3>
-        {tickets.map((ticket) => (
-          <Card key={ticket._id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                {/* Date & Status */}
-                <div className="md:col-span-2">
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(ticket.purchaseDate).toLocaleDateString()}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(ticket.purchaseDate).toLocaleTimeString()}
-                  </p>
-                </div>
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold tracking-tight">Transaction history</h3>
 
-                {/* Event Details */}
-                <div className="md:col-span-5">
-                  <h4 className="font-semibold mb-1">{ticket.event?.title}</h4>
-                  <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>{ticket.event?.date ? formatEventDate(new Date(ticket.event.date)) : 'TBA'}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      <span className="truncate max-w-[200px]">{ticket.event?.location || 'TBA'}</span>
-                    </div>
+        {tickets.map(ticket => (
+          <Card key={ticket._id} className="transition-shadow hover:shadow-md">
+            <CardContent className="p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="font-semibold leading-tight">
+                      {ticket.event?.title || "Event"}
+                    </h4>
+                    <Badge variant="outline">{ticket.ticketType}</Badge>
+                    <Badge variant={ticket.status === "used" || ticket.used ? "secondary" : "default"}>
+                      {ticket.status === "listed"
+                        ? "Listed"
+                        : ticket.status === "used" || ticket.used
+                        ? "Used"
+                        : "Active"}
+                    </Badge>
+                  </div>
+
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+                      {ticket.event?.date ? formatEventDate(ticket.event.date) : "Date TBA"}
+                    </span>
+                    <span className="flex items-center gap-1.5 min-w-0">
+                      <MapPin className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+                      <span className="truncate">{ticket.event?.location || "Location TBA"}</span>
+                    </span>
                   </div>
                 </div>
 
-                {/* Ticket Details */}
-                <div className="md:col-span-2">
-                  <Badge variant="outline" className="mb-1">
-                    {ticket.ticketType}
-                  </Badge>
-                  <p className="text-xs text-muted-foreground">
-                    Token: {ticket.tokenId}
+                <div className="text-left sm:text-right sm:flex-shrink-0">
+                  <p className="text-xl font-bold text-primary tabular-nums">
+                    {formatINR(ticket.price)}
                   </p>
-                </div>
-
-                {/* Price */}
-                <div className="md:col-span-1 text-right">
-                  <p className="font-bold text-primary">₹{ticket.price}</p>
-                  <Badge 
-                    variant={ticket.status === 'active' ? 'default' : 'secondary'}
-                    className="text-xs mt-1"
-                  >
-                    {ticket.status || 'Active'}
-                  </Badge>
-                </div>
-
-                {/* Actions */}
-                <div className="md:col-span-2 flex justify-end gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => window.open(`https://etherscan.io/tx/${ticket.transactionHash}`, '_blank')}
-                  >
-                    <ExternalLink className="h-3 w-3 mr-1" />
-                    View TX
-                  </Button>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {formatEventDateTime(ticket.purchaseDate)}
+                  </p>
                 </div>
               </div>
 
-              {/* Transaction Hash */}
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Transaction Hash:</span>
-                  <code className="text-xs bg-muted px-2 py-1 rounded">
+              <dl className="mt-4 pt-4 border-t grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-xs">
+                <div className="min-w-0">
+                  <dt className="text-muted-foreground">Token ID</dt>
+                  <dd className="font-mono mt-0.5">#{ticket.tokenId}</dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-muted-foreground">Paid with</dt>
+                  <dd className="mt-0.5">UPI · Demo</dd>
+                </div>
+                <div className="col-span-2 sm:col-span-1 min-w-0">
+                  <dt className="text-muted-foreground">Reference</dt>
+                  <dd className="font-mono mt-0.5 truncate" title={ticket.transactionHash}>
                     {ticket.transactionHash}
-                  </code>
+                  </dd>
                 </div>
-              </div>
-
-              {/* Metadata */}
-              <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                <div>
-                  <span className="text-muted-foreground">Owner:</span>
-                  <p className="font-mono truncate">{ticket.owner.substring(0, 10)}...</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Event ID:</span>
-                  <p className="font-mono truncate">{ticket.eventId}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Used:</span>
-                  <p className="flex items-center gap-1">
-                    {ticket.isUsed || ticket.used ? (
-                      <>
-                        <CheckCircle2 className="h-3 w-3 text-green-500" />
-                        Yes
-                      </>
-                    ) : (
-                      'No'
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Purchase Method:</span>
-                  <p>MetaMask</p>
-                </div>
-              </div>
+              </dl>
             </CardContent>
           </Card>
         ))}

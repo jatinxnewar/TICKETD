@@ -1,49 +1,93 @@
 "use client"
 
+import { useState } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Sparkles } from "lucide-react"
-import Link from "next/link"
+import { Search, ShieldCheck, Repeat, BadgeCheck } from "lucide-react"
+
+const trustPoints = [
+  { icon: ShieldCheck, label: "Verified tickets" },
+  { icon: Repeat, label: "Fair-priced resale" },
+  { icon: BadgeCheck, label: "Instant transfer" },
+]
 
 export function Hero() {
-  return (
-    <section className="relative py-20 px-4 text-center">
-      <div className="absolute inset-0 gradient-bg opacity-5" />
-      <div className="relative container mx-auto max-w-4xl">
-        <div className="flex items-center justify-center mb-8">
-          <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Secure Event Tickets</span>
-        </div>
+  const [query, setQuery] = useState("")
+  const router = useRouter()
 
-        <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-          Buy, Sell & Trade
-          <span className="text-primary"> Event Tickets</span>
+  const handleSearch = (event: React.FormEvent) => {
+    event.preventDefault()
+    const trimmed = query.trim()
+    router.push(trimmed ? `/events?q=${encodeURIComponent(trimmed)}` : "/events")
+  }
+
+  return (
+    <section className="relative overflow-hidden border-b">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background"
+      />
+
+      <div className="container relative mx-auto max-w-4xl px-4 py-20 text-center sm:py-28">
+        <span className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+          Secure event ticketing
+        </span>
+
+        <h1 className="mt-6 text-4xl font-bold leading-tight tracking-tight md:text-6xl">
+          Buy, sell and trade
+          <span className="text-primary"> event tickets</span>
         </h1>
 
-        <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
-          Your tickets, your way. Get genuine tickets for concerts, festivals, and events across India. 
-          Resell safely when plans change.
+        <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+          Genuine tickets for concerts, festivals and cultural events across India — and a safe way
+          to resell when your plans change.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto mb-8">
+        <form
+          onSubmit={handleSearch}
+          role="search"
+          className="mx-auto mt-10 flex max-w-md flex-col gap-3 sm:flex-row"
+        >
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search events..." className="pl-10" />
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <label htmlFor="hero-search" className="sr-only">
+              Search events
+            </label>
+            <Input
+              id="hero-search"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search events, artists or cities…"
+              className="h-11 pl-10"
+            />
           </div>
-          <Button size="lg">Search</Button>
+          <Button type="submit" size="lg" className="h-11">
+            Search
+          </Button>
+        </form>
+
+        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+          <Button asChild size="lg" variant="outline">
+            <Link href="/events">Browse events</Link>
+          </Button>
+          <Button asChild size="lg" variant="ghost">
+            <Link href="/marketplace">Visit marketplace</Link>
+          </Button>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/events">
-            <Button size="lg" className="w-full sm:w-auto">
-              Browse Events
-            </Button>
-          </Link>
-          <Link href="/create-event">
-            <Button variant="outline" size="lg" className="w-full sm:w-auto bg-transparent">
-              Create Event
-            </Button>
-          </Link>
-        </div>
+        <ul className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
+          {trustPoints.map(point => (
+            <li key={point.label} className="flex items-center gap-2">
+              <point.icon className="h-4 w-4 text-primary" aria-hidden="true" />
+              {point.label}
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   )

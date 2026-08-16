@@ -1,63 +1,52 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { marketplaceApi, MarketplaceListing } from "@/lib/api"
+import { Button } from "@/components/ui/button"
+import { marketplaceApi } from "@/lib/api"
+import { CURRENT_USER_ID } from "@/lib/user"
+import type { MarketplaceFilterState } from "@/lib/filters"
 import { ListingCard } from "./listing-card"
 import { useToast } from "@/hooks/use-toast"
+import { useStoreData } from "@/hooks/useStoreData"
 
-export function MarketplaceGrid({ filters }: any) {
-  const [listings, setListings] = useState<MarketplaceListing[]>([])
-  const [loading, setLoading] = useState(true)
+export function MarketplaceGrid({ filters }: { filters?: MarketplaceFilterState }) {
   const [sortBy, setSortBy] = useState("recent")
-  const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
-  useEffect(() => {
-    async function fetchListings() {
-      setLoading(true)
-      setError(null)
-      try {
-        const data = await marketplaceApi.getAll({ status: 'active' })
-        setListings(data)
-      } catch (err) {
-        console.error('Failed to fetch marketplace listings:', err)
-        setError('Failed to load listings')
-        setListings([])
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchListings()
-  }, [])
+  const { data, loading, error, refresh } = useStoreData(
+    () => marketplaceApi.getAll(),
+    "Could not load marketplace listings.",
+  )
+  const listings = data ?? []
 
   const handlePurchase = async (listingId: string) => {
-    // Mock wallet address - in production this would come from wallet connection
-    const mockWalletAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
-    
-    try {
-      await marketplaceApi.purchase(listingId, mockWalletAddress)
-      
-      // Remove the purchased listing from the list
-      setListings(listings.filter(l => l._id !== listingId))
-      
-      toast({
-        title: "Success!",
-        description: "Ticket purchased successfully. Check your dashboard!",
-      })
-    } catch (error) {
-      throw error
-    }
+    // Surfaced to the caller so the transaction modal can show a failed state;
+    // the toast here covers the success path.
+    await marketplaceApi.purchase(listingId, CURRENT_USER_ID)
+    toast({
+      title: "Purchase complete",
+      description: "The ticket is now in your dashboard.",
+    })
+    refresh()
   }
 
-  // Filtering logic
-  const filteredListings = listings.filter((listing) => {
+  const filteredListings = listings.filter(listing => {
     const price = parseFloat(listing.price)
-    const [min, max] = filters?.price || [0, 10000]
+    const [min, max] = filters?.price ?? [0, Number.POSITIVE_INFINITY]
     const event = listing.event
-    const categoryMatch = !filters?.categories?.length || (event && filters.categories.includes(event.category))
-    const locationMatch = !filters?.locations?.length || (event && filters.locations.includes(event.location))
-    return price >= min && price <= max && categoryMatch && locationMatch
+
+    const priceMatch = !Number.isFinite(price) || (price >= min && price <= max)
+    const categoryMatch = !filters?.categories?.length || (!!event && filters.categories.includes(event.category))
+    // Locations are stored as "Mumbai, Maharashtra" but filtered by city alone.
+    const locationMatch =
+      !filters?.locations?.length ||
+      (!!event && filters.locations.some(city => event.location.toLowerCase().includes(city.toLowerCase())))
+    const typeMatch =
+      !filters?.types?.length ||
+      filters.types.some(type => (listing.ticketType || "").toLowerCase().includes(type.toLowerCase()))
+
+    return priceMatch && categoryMatch && locationMatch && typeMatch
   })
 
   const sortedListings = [...filteredListings].sort((a, b) => {
@@ -103,20 +92,27 @@ export function MarketplaceGrid({ filters }: any) {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-96 bg-secondary/20 animate-pulse rounded-lg" />
+            <div key={i} className="h-[26rem] rounded-xl border bg-muted/40 animate-pulse" />
           ))}
         </div>
       ) : error ? (
-        <div className="text-center py-20">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h3 className="text-xl font-semibold mb-2">Oops! Something went wrong</h3>
-          <p className="text-muted-foreground">{error}</p>
+        <div className="flex flex-col items-center text-center py-20 px-6">
+          <h3 className="text-lg font-semibold mb-1">Couldn't load the marketplace</h3>
+          <p className="text-muted-foreground mb-6 max-w-sm">{error}</p>
+          <Button variant="outline" onClick={refresh}>
+            Try again
+          </Button>
         </div>
       ) : sortedListings.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="text-6xl mb-4">🎫</div>
-          <h3 className="text-xl font-semibold mb-2">No tickets found</h3>
-          <p className="text-muted-foreground">Try adjusting your filters or check back later</p>
+        <div className="flex flex-col items-center text-center py-20 px-6">
+          <h3 className="text-lg font-semibold mb-1">
+            {listings.length === 0 ? "No tickets listed yet" : "No tickets match your filters"}
+          </h3>
+          <p className="text-muted-foreground max-w-sm">
+            {listings.length === 0
+              ? "Resale tickets appear here as soon as someone lists one."
+              : "Try widening your price range or clearing a filter."}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

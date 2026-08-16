@@ -1,41 +1,47 @@
-﻿"use client"
+"use client"
 
+import { useState } from "react"
+import Link from "next/link"
 import { Header } from "@/components/layout/header"
+import { Footer } from "@/components/layout/footer"
 import { MarketplaceGrid } from "@/components/marketplace/marketplace-grid"
 import { MarketplaceFilters } from "@/components/marketplace/marketplace-filters"
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
-import Link from "next/link"
+import { defaultMarketplaceFilters, type MarketplaceFilterState } from "@/lib/filters"
 
 export default function MarketplacePage() {
-  const [filters, setFilters] = useState({ price: [0, 10000], categories: [], types: [], locations: [] })
+  const [filters, setFilters] = useState<MarketplaceFilterState>(defaultMarketplaceFilters)
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <Header />
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8 flex justify-between items-start">
+      <main id="main-content" className="container mx-auto flex-1 px-4 py-8">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Ticket Marketplace</h1>
-            <p className="text-muted-foreground">Buy and sell event tickets securely</p>
+            <h1 className="text-3xl font-bold tracking-tight">Ticket Marketplace</h1>
+            <p className="text-muted-foreground mt-1">
+              Buy verified resale tickets, or list one of your own.
+            </p>
           </div>
-          <Link href="/create-listing">
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Sell Tickets
-            </Button>
-          </Link>
+          <Button asChild className="sm:flex-shrink-0">
+            <Link href="/dashboard">
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+              Sell a ticket
+            </Link>
+          </Button>
         </div>
-        <div className="flex flex-col lg:flex-row gap-8">
-          <aside className="lg:w-64">
+
+        <div className="flex flex-col gap-8 lg:flex-row">
+          <aside className="lg:w-64 lg:flex-shrink-0">
             <MarketplaceFilters filters={filters} setFilters={setFilters} />
           </aside>
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <MarketplaceGrid filters={filters} />
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }

@@ -3,11 +3,13 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, MapPin, Clock, Users, Share2, Heart, Info } from "lucide-react"
+import { Calendar, MapPin, Users, Share2, Info, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
+import { useState } from "react"
 import { formatEventDate } from "@/lib/utils"
 import { Event } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 import { TicketPurchaseCard } from "@/components/tickets/ticket-purchase-card"
 
 interface EventDetailProps {
@@ -15,9 +17,35 @@ interface EventDetailProps {
 }
 
 export function EventDetail({ event }: EventDetailProps) {
-  const totalAvailable = event.ticketTypes?.reduce((sum, ticket) => sum + (ticket.available || 0), 0) || 0
-  const totalQuantity = event.ticketTypes?.reduce((sum, ticket) => sum + (ticket.quantity || 0), 0) || 0
-  const soldPercentage = totalQuantity > 0 ? Math.round(((totalQuantity - totalAvailable) / totalQuantity) * 100) : 0
+  const [shared, setShared] = useState(false)
+  const { toast } = useToast()
+
+  const totalAvailable = event.ticketTypes?.reduce((sum, t) => sum + (t.available || 0), 0) || 0
+  const totalQuantity = event.ticketTypes?.reduce((sum, t) => sum + (t.quantity || 0), 0) || 0
+  const soldPercentage =
+    totalQuantity > 0 ? Math.round(((totalQuantity - totalAvailable) / totalQuantity) * 100) : 0
+
+  const handleShare = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : ""
+    try {
+      // Native share sheet on mobile; clipboard everywhere else.
+      if (navigator.share) {
+        await navigator.share({ title: event.title, url })
+        return
+      }
+      await navigator.clipboard.writeText(url)
+      setShared(true)
+      setTimeout(() => setShared(false), 2000)
+    } catch (error) {
+      // A user dismissing the share sheet is not an error worth reporting.
+      if (error instanceof DOMException && error.name === "AbortError") return
+      toast({
+        title: "Couldn't share",
+        description: "Copy the address from your browser instead.",
+        variant: "destructive",
+      })
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -42,7 +70,7 @@ export function EventDetail({ event }: EventDetailProps) {
               </h1>
               <div className="flex items-center gap-2 text-white/90">
                 <Calendar className="h-4 w-4" />
-                <span className="font-medium">{formatEventDate(new Date(event.date))} • {event.time}</span>
+                <span className="font-medium">{formatEventDate(event.date)} • {event.time}</span>
               </div>
             </div>
           </div>
@@ -56,7 +84,7 @@ export function EventDetail({ event }: EventDetailProps) {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Date & Time</p>
-                  <p className="font-semibold text-sm">{formatEventDate(new Date(event.date))}</p>
+                  <p className="font-semibold text-sm">{formatEventDate(event.date)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -80,7 +108,9 @@ export function EventDetail({ event }: EventDetailProps) {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Tickets Available</p>
-                  <p className="font-semibold text-sm">{totalAvailable} / {totalQuantity}</p>
+                  <p className="font-semibold text-sm tabular-nums">
+                    {totalAvailable.toLocaleString("en-IN")} of {totalQuantity.toLocaleString("en-IN")}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -91,13 +121,24 @@ export function EventDetail({ event }: EventDetailProps) {
             <Card>
               <CardContent className="p-4">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium">Event Popularity</span>
-                  <span className="text-sm font-bold text-primary">{soldPercentage}% Sold</span>
+                  <span className="text-sm font-medium">Tickets sold</span>
+                  <span className="text-sm font-bold text-primary tabular-nums">{soldPercentage}%</span>
                 </div>
-                <div className="w-full bg-secondary rounded-full h-2.5">
+                <div
+                  className="w-full bg-secondary rounded-full h-2.5 overflow-hidden"
+                  role="progressbar"
+                  aria-valuenow={soldPercentage}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="Tickets sold"
+                >
                   <div
                     className={`h-2.5 rounded-full transition-all ${
-                      soldPercentage > 80 ? 'bg-red-500' : soldPercentage > 50 ? 'bg-orange-500' : 'bg-green-500'
+                      soldPercentage > 80
+                        ? "bg-rose-500"
+                        : soldPercentage > 50
+                        ? "bg-amber-500"
+                        : "bg-emerald-500"
                     }`}
                     style={{ width: `${soldPercentage}%` }}
                   />
@@ -144,7 +185,7 @@ export function EventDetail({ event }: EventDetailProps) {
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-primary mt-1">•</span>
-                        <span>Full refund available up to 48 hours before event</span>
+                        <span>Resale capped at 120% of face value to deter scalping</span>
                       </li>
                     </ul>
                   </div>
@@ -190,17 +231,19 @@ export function EventDetail({ event }: EventDetailProps) {
             </TabsContent>
           </Tabs>
 
-          {/* Actions */}
-          <div className="flex gap-3">
-            <Button variant="outline" className="flex-1">
-              <Heart className="h-4 w-4 mr-2" />
-              Save Event
-            </Button>
-            <Button variant="outline" className="flex-1">
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-          </div>
+          <Button variant="outline" className="w-full" onClick={handleShare}>
+            {shared ? (
+              <>
+                <Check className="mr-2 h-4 w-4 text-emerald-600" aria-hidden="true" />
+                Link copied
+              </>
+            ) : (
+              <>
+                <Share2 className="mr-2 h-4 w-4" aria-hidden="true" />
+                Share this event
+              </>
+            )}
+          </Button>
         </div>
 
         {/* Ticket Purchase Card */}

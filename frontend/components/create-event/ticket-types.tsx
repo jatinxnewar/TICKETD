@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Plus, Trash2, Edit } from "lucide-react"
+import { formatINR } from "@/lib/utils"
 
 interface TicketTypesProps {
   data: any
@@ -122,7 +123,7 @@ export function TicketTypes({ data, updateData, onNext, onPrevious }: TicketType
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <span className="font-medium">Price:</span>
-                  <p>{ticket.price} ETH</p>
+                  <p>{formatINR(ticket.price)}</p>
                 </div>
                 <div>
                   <span className="font-medium">Quantity:</span>
@@ -165,12 +166,13 @@ export function TicketTypes({ data, updateData, onNext, onPrevious }: TicketType
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="ticketPrice">Price (ETH) *</Label>
+                <Label htmlFor="ticketPrice">Price (INR) *</Label>
                 <Input
                   id="ticketPrice"
                   type="number"
-                  step="0.001"
-                  placeholder="0.1"
+                  step="100"
+                  min="0"
+                  placeholder="2500"
                   value={formData.price}
                   onChange={(e) => handleInputChange("price", e.target.value)}
                 />
@@ -195,7 +197,7 @@ export function TicketTypes({ data, updateData, onNext, onPrevious }: TicketType
                   type="number"
                   min="1"
                   value={formData.quantity}
-                  onChange={(e) => handleInputChange("quantity", Number.parseInt(e.target.value))}
+                  onChange={(e) => handleInputChange("quantity", Math.max(1, Number.parseInt(e.target.value) || 1))}
                 />
               </div>
               <div className="space-y-2">
@@ -205,7 +207,7 @@ export function TicketTypes({ data, updateData, onNext, onPrevious }: TicketType
                   type="number"
                   min="1"
                   value={formData.maxPerWallet}
-                  onChange={(e) => handleInputChange("maxPerWallet", Number.parseInt(e.target.value))}
+                  onChange={(e) => handleInputChange("maxPerWallet", Math.max(1, Number.parseInt(e.target.value) || 1))}
                 />
               </div>
             </div>

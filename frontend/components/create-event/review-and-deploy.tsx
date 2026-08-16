@@ -6,9 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
-import { CheckCircle, AlertCircle, Loader2, Calendar, MapPin, Users, DollarSign } from "lucide-react"
+import { CheckCircle, AlertCircle, Loader2, Calendar, MapPin, Users, IndianRupee } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { formatEventDate } from "@/lib/utils"
+import { formatEventDate, formatINR } from "@/lib/utils"
+import { eventsApi } from "@/lib/api"
+import { useRouter } from "next/navigation"
 
 interface ReviewAndDeployProps {
   data: any
@@ -22,57 +24,84 @@ interface ReviewAndDeployProps {
 export function ReviewAndDeploy({ data, onPrevious }: ReviewAndDeployProps) {
   const [isDeploying, setIsDeploying] = useState(false)
   const [deploymentStep, setDeploymentStep] = useState(0)
-  const [deploymentComplete, setDeploymentComplete] = useState(false)
+  const [createdEventId, setCreatedEventId] = useState<string | null>(null)
   const { toast } = useToast()
+  const router = useRouter()
 
   const deploymentSteps = [
-    "Validating event data",
-    "Deploying smart contract",
-    "Minting NFT collection",
-    "Setting up marketplace",
-    "Finalizing deployment",
+    "Validating event details",
+    "Registering the event",
+    "Creating ticket inventory",
+    "Publishing to the marketplace",
   ]
 
   const handleDeploy = async () => {
     setIsDeploying(true)
 
-    // Simulate deployment process
-    for (let i = 0; i < deploymentSteps.length; i++) {
-      setDeploymentStep(i)
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+    try {
+      for (let i = 0; i < deploymentSteps.length; i++) {
+        setDeploymentStep(i)
+        await new Promise(resolve => setTimeout(resolve, 700))
+      }
+
+      // Actually persist the event so it appears in listings afterwards.
+      const created = await eventsApi.create({
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        date: data.date ? new Date(data.date).toISOString() : undefined,
+        time: data.startTime,
+        location: data.location,
+        venue: data.venue,
+        organizer: data.organizer,
+        maxAttendees: totalTickets,
+        ticketTypes: (data.ticketTypes || []).map((t: any) => ({
+          name: t.name,
+          price: String(Math.round(Number.parseFloat(t.price) || 0)),
+          quantity: t.quantity,
+          available: t.quantity,
+        })),
+      })
+
+      setCreatedEventId(created._id)
+      toast({
+        title: "Event published",
+        description: "Your event is now live and open for bookings.",
+      })
+    } catch (error) {
+      toast({
+        title: "Could not publish event",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeploying(false)
     }
-
-    setDeploymentComplete(true)
-    setIsDeploying(false)
-
-    toast({
-      title: "Event Deployed Successfully!",
-      description: "Your event is now live on the blockchain.",
-    })
   }
 
-  const totalTickets = data.ticketTypes?.reduce((sum: number, ticket: any) => sum + ticket.quantity, 0) || 0
+  const totalTickets =
+    data.ticketTypes?.reduce((sum: number, t: any) => sum + (Number(t.quantity) || 0), 0) || 0
   const totalRevenue =
     data.ticketTypes?.reduce(
-      (sum: number, ticket: any) => sum + Number.parseFloat(ticket.price) * ticket.quantity,
+      (sum: number, t: any) => sum + (Number.parseFloat(t.price) || 0) * (Number(t.quantity) || 0),
       0,
     ) || 0
 
-  if (deploymentComplete) {
+  if (createdEventId) {
     return (
-      <div className="text-center space-y-6">
-        <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+      <div className="space-y-6 text-center">
+        <CheckCircle className="mx-auto h-16 w-16 text-emerald-500" aria-hidden="true" />
         <div>
-          <h2 className="text-2xl font-bold mb-2">Event Deployed Successfully!</h2>
-          <p className="text-muted-foreground">Your event is now live on the blockchain</p>
+          <h2 className="mb-2 text-2xl font-bold">Event published</h2>
+          <p className="text-muted-foreground">
+            {data.title} is live and ready to accept bookings.
+          </p>
         </div>
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">Contract Address:</p>
-          <code className="bg-muted px-3 py-1 rounded text-sm">0x1234567890abcdef1234567890abcdef12345678</code>
-        </div>
-        <div className="flex justify-center space-x-4">
-          <Button>View Event</Button>
-          <Button variant="outline">Share Event</Button>
+        <div className="flex justify-center gap-3">
+          <Button onClick={() => router.push(`/events/${createdEventId}`)}>View event</Button>
+          <Button variant="outline" onClick={() => router.push("/events")}>
+            All events
+          </Button>
         </div>
       </div>
     )
@@ -80,21 +109,24 @@ export function ReviewAndDeploy({ data, onPrevious }: ReviewAndDeployProps) {
 
   if (isDeploying) {
     return (
-      <div className="text-center space-y-6">
-        <Loader2 className="h-16 w-16 animate-spin mx-auto" />
+      <div className="space-y-6 text-center">
+        <Loader2 className="mx-auto h-16 w-16 animate-spin text-primary" aria-hidden="true" />
         <div>
-          <h2 className="text-2xl font-bold mb-2">Deploying Your Event</h2>
-          <p className="text-muted-foreground">Please wait while we deploy your event to the blockchain</p>
+          <h2 className="mb-2 text-2xl font-bold">Publishing your event</h2>
+          <p className="text-muted-foreground">This only takes a moment.</p>
         </div>
-        <div className="space-y-4">
-          <Progress value={(deploymentStep / deploymentSteps.length) * 100} className="w-full max-w-md mx-auto" />
-          <p className="text-sm">{deploymentSteps[deploymentStep]}</p>
+        <div className="space-y-3">
+          <Progress
+            value={((deploymentStep + 1) / deploymentSteps.length) * 100}
+            className="mx-auto w-full max-w-md"
+          />
+          <p className="text-sm" aria-live="polite">
+            {deploymentSteps[deploymentStep]}
+          </p>
         </div>
         <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Do not close this window during deployment. This process may take a few minutes.
-          </AlertDescription>
+          <AlertCircle className="h-4 w-4" aria-hidden="true" />
+          <AlertDescription>Please keep this window open until publishing finishes.</AlertDescription>
         </Alert>
       </div>
     )
@@ -137,9 +169,9 @@ export function ReviewAndDeploy({ data, onPrevious }: ReviewAndDeployProps) {
                   <div className="text-sm text-muted-foreground">Total Tickets</div>
                 </div>
                 <div className="text-center p-4 bg-muted rounded-lg">
-                  <DollarSign className="h-6 w-6 mx-auto mb-2" />
-                  <div className="text-2xl font-bold">{totalRevenue.toFixed(2)}</div>
-                  <div className="text-sm text-muted-foreground">Max Revenue (ETH)</div>
+                  <IndianRupee className="h-6 w-6 mx-auto mb-2" aria-hidden="true" />
+                  <div className="text-2xl font-bold tabular-nums">{formatINR(totalRevenue)}</div>
+                  <div className="text-sm text-muted-foreground">Max revenue</div>
                 </div>
               </div>
               <Badge variant="secondary">{data.category}</Badge>
@@ -174,9 +206,9 @@ export function ReviewAndDeploy({ data, onPrevious }: ReviewAndDeployProps) {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-semibold">{ticket.price} ETH</div>
+                  <div className="font-semibold tabular-nums">{formatINR(ticket.price)}</div>
                   <div className="text-sm text-muted-foreground">{ticket.quantity} available</div>
-                  <div className="text-xs text-muted-foreground">Max {ticket.maxPerWallet} per wallet</div>
+                  <div className="text-xs text-muted-foreground">Max {ticket.maxPerWallet} per person</div>
                 </div>
               </div>
             ))}
@@ -230,12 +262,10 @@ export function ReviewAndDeploy({ data, onPrevious }: ReviewAndDeployProps) {
         </CardContent>
       </Card>
 
-      {/* Deployment Cost */}
       <Alert>
-        <AlertCircle className="h-4 w-4" />
+        <AlertCircle className="h-4 w-4" aria-hidden="true" />
         <AlertDescription>
-          <strong>Deployment Cost:</strong> Approximately 0.05 ETH will be required to deploy your event smart contract
-          and mint the NFT collection. Make sure you have sufficient balance in your connected wallet.
+          Ticket'D charges a 5% fee on each ticket sold. There is no cost to publish an event.
         </AlertDescription>
       </Alert>
 
@@ -243,8 +273,8 @@ export function ReviewAndDeploy({ data, onPrevious }: ReviewAndDeployProps) {
         <Button variant="outline" onClick={onPrevious}>
           Previous
         </Button>
-        <Button onClick={handleDeploy} size="lg">
-          Deploy Event to Blockchain
+        <Button onClick={handleDeploy} size="lg" disabled={!data.title || totalTickets === 0}>
+          Publish event
         </Button>
       </div>
     </div>

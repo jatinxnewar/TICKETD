@@ -1,107 +1,131 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
+import { formatINR } from "@/lib/utils"
+import {
+  CATEGORY_OPTIONS,
+  LOCATION_OPTIONS,
+  TICKET_TYPE_OPTIONS,
+  PRICE_CEILING,
+  PRICE_FLOOR,
+  defaultMarketplaceFilters,
+  isDefaultFilters,
+  type MarketplaceFilterState,
+} from "@/lib/filters"
 
-import { useState } from "react"
+interface MarketplaceFiltersProps {
+  filters: MarketplaceFilterState
+  setFilters: (filters: MarketplaceFilterState) => void
+}
 
-const CATEGORY_OPTIONS = ["Music", "Festival", "Comedy", "Concert", "Education"];
-const LOCATION_OPTIONS = ["Mumbai", "Delhi", "Goa", "Bangalore", "Ahmedabad"];
-const TICKET_TYPE_OPTIONS = ["General", "VIP"];
+type ListKey = "categories" | "types" | "locations"
 
-export function MarketplaceFilters({ filters, setFilters, onApply }: any) {
-  const [localFilters, setLocalFilters] = useState(filters || {
-    price: [0, 10000],
-    categories: [],
-    types: [],
-    locations: [],
-  });
+export function MarketplaceFilters({ filters, setFilters }: MarketplaceFiltersProps) {
+  const [draft, setDraft] = useState<MarketplaceFilterState>(filters)
 
-  const handleCheckbox = (key: string, value: string) => {
-    setLocalFilters((prev: any) => {
-      const arr = prev[key];
-      return {
-        ...prev,
-        [key]: arr.includes(value) ? arr.filter((v: string) => v !== value) : [...arr, value],
-      };
-    });
-  };
+  // Keep the draft aligned when the parent resets filters elsewhere.
+  useEffect(() => setDraft(filters), [filters])
 
-  const handlePrice = (val: number[]) => {
-    setLocalFilters((prev: any) => ({ ...prev, price: val }));
-  };
+  const toggle = (key: ListKey, value: string) => {
+    setDraft(prev => ({
+      ...prev,
+      [key]: prev[key].includes(value)
+        ? prev[key].filter(v => v !== value)
+        : [...prev[key], value],
+    }))
+  }
 
-  const handleApply = () => {
-    setFilters(localFilters);
-    if (onApply) onApply(localFilters);
-  };
+  const activeCount =
+    draft.categories.length +
+    draft.types.length +
+    draft.locations.length +
+    (draft.price[0] !== PRICE_FLOOR || draft.price[1] !== PRICE_CEILING ? 1 : 0)
 
-  const handleClear = () => {
-    setLocalFilters({ price: [0, 10000], categories: [], types: [], locations: [] });
-    setFilters({ price: [0, 10000], categories: [], types: [], locations: [] });
-    if (onApply) onApply({ price: [0, 10000], categories: [], types: [], locations: [] });
-  };
+  const dirty = JSON.stringify(draft) !== JSON.stringify(filters)
+
+  const groups: { label: string; key: ListKey; options: readonly string[] }[] = [
+    { label: "Category", key: "categories", options: CATEGORY_OPTIONS },
+    { label: "Ticket type", key: "types", options: TICKET_TYPE_OPTIONS },
+    { label: "City", key: "locations", options: LOCATION_OPTIONS },
+  ]
 
   return (
-    <Card className="card-enhanced">
-      <CardHeader>
-        <CardTitle>Filters</CardTitle>
+    <Card className="lg:sticky lg:top-24">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base">Filters</CardTitle>
+          {activeCount > 0 && <Badge variant="secondary">{activeCount}</Badge>}
+        </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Price Range */}
+
+      <CardContent className="space-y-5">
         <div className="space-y-3">
-          <Label>Price Range (INR)</Label>
-          <Slider value={localFilters.price} onValueChange={handlePrice} max={10000} min={0} step={100} className="w-full" />
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>₹0</span>
-            <span>₹10,000</span>
+          <Label>Price range</Label>
+          <Slider
+            value={draft.price}
+            onValueChange={value => setDraft(prev => ({ ...prev, price: [value[0], value[1]] }))}
+            min={PRICE_FLOOR}
+            max={PRICE_CEILING}
+            step={500}
+            minStepsBetweenThumbs={1}
+            aria-label="Price range"
+          />
+          <div className="flex justify-between text-sm font-medium tabular-nums">
+            <span>{formatINR(draft.price[0])}</span>
+            <span>
+              {draft.price[1] >= PRICE_CEILING ? `${formatINR(PRICE_CEILING)}+` : formatINR(draft.price[1])}
+            </span>
           </div>
         </div>
-        <Separator />
-        {/* Event Categories */}
-        <div className="space-y-3">
-          <Label>Categories</Label>
-          <div className="space-y-2">
-            {CATEGORY_OPTIONS.map((category) => (
-              <div key={category} className="flex items-center space-x-2">
-                <Checkbox id={category} checked={localFilters.categories.includes(category)} onCheckedChange={() => handleCheckbox("categories", category)} />
-                <Label htmlFor={category} className="text-sm">{category}</Label>
-              </div>
-            ))}
+
+        {groups.map(group => (
+          <div key={group.key} className="space-y-3">
+            <Separator />
+            <Label>{group.label}</Label>
+            <div className="space-y-2.5">
+              {group.options.map(option => {
+                const id = `${group.key}-${option}`
+                return (
+                  <div key={option} className="flex items-center gap-2">
+                    <Checkbox
+                      id={id}
+                      checked={draft[group.key].includes(option)}
+                      onCheckedChange={() => toggle(group.key, option)}
+                    />
+                    <Label htmlFor={id} className="text-sm font-normal cursor-pointer">
+                      {option}
+                    </Label>
+                  </div>
+                )
+              })}
+            </div>
           </div>
+        ))}
+
+        <div className="space-y-2 pt-1">
+          <Button className="w-full" onClick={() => setFilters(draft)} disabled={!dirty}>
+            {dirty ? "Apply filters" : "Filters applied"}
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full"
+            disabled={isDefaultFilters(draft) && isDefaultFilters(filters)}
+            onClick={() => {
+              const reset = defaultMarketplaceFilters()
+              setDraft(reset)
+              setFilters(reset)
+            }}
+          >
+            Clear all
+          </Button>
         </div>
-        <Separator />
-        {/* Ticket Type */}
-        <div className="space-y-3">
-          <Label>Ticket Type</Label>
-          <div className="space-y-2">
-            {TICKET_TYPE_OPTIONS.map((type) => (
-              <div key={type} className="flex items-center space-x-2">
-                <Checkbox id={type} checked={localFilters.types.includes(type)} onCheckedChange={() => handleCheckbox("types", type)} />
-                <Label htmlFor={type} className="text-sm">{type}</Label>
-              </div>
-            ))}
-          </div>
-        </div>
-        <Separator />
-        {/* Location */}
-        <div className="space-y-3">
-          <Label>Location</Label>
-          <div className="space-y-2">
-            {LOCATION_OPTIONS.map((location) => (
-              <div key={location} className="flex items-center space-x-2">
-                <Checkbox id={location} checked={localFilters.locations.includes(location)} onCheckedChange={() => handleCheckbox("locations", location)} />
-                <Label htmlFor={location} className="text-sm">{location}</Label>
-              </div>
-            ))}
-          </div>
-        </div>
-        <Button className="w-full" onClick={handleApply}>Apply Filters</Button>
-        <Button variant="outline" className="w-full bg-transparent" onClick={handleClear}>Clear All</Button>
       </CardContent>
     </Card>
   )

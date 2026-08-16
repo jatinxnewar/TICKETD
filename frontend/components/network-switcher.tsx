@@ -12,27 +12,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useToast } from "@/hooks/use-toast"
 
 const HEDERA_TESTNET_CHAIN_ID = 296
-const HEDERA_MAINNET_CHAIN_ID = 295
 
 const NETWORKS = [
-  {
-    chainId: 296,
-    name: "Hedera Testnet",
-    icon: "🌐",
-    rpc: "https://testnet.hashio.io/api",
-  },
-  {
-    chainId: 295,
-    name: "Hedera Mainnet",
-    icon: "🌐",
-    rpc: "https://mainnet.hashio.io/api",
-  },
+  { chainId: HEDERA_TESTNET_CHAIN_ID, name: "Hedera Testnet" },
+  { chainId: 295, name: "Hedera Mainnet" },
 ]
 
 export function NetworkSwitcher() {
   const { chainId, isConnected, switchNetwork } = useWeb3()
+  const { toast } = useToast()
 
   if (!isConnected) {
     return null
@@ -44,9 +35,15 @@ export function NetworkSwitcher() {
   const handleSwitchNetwork = async (targetChainId: number) => {
     try {
       await switchNetwork(targetChainId)
-    } catch (error: any) {
-      console.error("Failed to switch network:", error)
-      alert(error.message || "Failed to switch network. Please switch manually in your wallet.")
+    } catch (error) {
+      toast({
+        title: "Couldn't switch network",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Please switch manually in your wallet.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -80,14 +77,9 @@ export function NetworkSwitcher() {
             onClick={() => handleSwitchNetwork(network.chainId)}
             className="cursor-pointer"
           >
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-2">
-                <span>{network.icon}</span>
-                <span>{network.name}</span>
-              </div>
-              {chainId === network.chainId && (
-                <Badge variant="secondary" className="ml-2">Active</Badge>
-              )}
+            <div className="flex w-full items-center justify-between gap-2">
+              <span>{network.name}</span>
+              {chainId === network.chainId && <Badge variant="secondary">Active</Badge>}
             </div>
           </DropdownMenuItem>
         ))}

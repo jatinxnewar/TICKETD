@@ -1,11 +1,29 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, Loader2, ExternalLink, Wallet, AlertCircle } from "lucide-react"
+import { CheckCircle2, Loader2, AlertCircle, ShieldCheck } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
+import { formatINR } from "@/lib/utils"
+
+type Status = "idle" | "authorising" | "processing" | "issuing" | "success" | "error"
+
+const STEPS: { key: Status; label: string }[] = [
+  { key: "authorising", label: "Authorising payment" },
+  { key: "processing", label: "Confirming transaction" },
+  { key: "issuing", label: "Issuing your ticket" },
+]
+
+const COPY: Record<Status, { title: string; description: string }> = {
+  idle: { title: "Preparing checkout", description: "Setting things up…" },
+  authorising: { title: "Authorising payment", description: "Confirming your payment details." },
+  processing: { title: "Confirming transaction", description: "This usually takes a few seconds." },
+  issuing: { title: "Issuing your ticket", description: "Registering the ticket to your account." },
+  success: { title: "Payment successful", description: "Your ticket has been added to your account." },
+  error: { title: "Payment failed", description: "" },
+}
 
 interface TransactionModalProps {
   open: boolean
@@ -13,7 +31,9 @@ interface TransactionModalProps {
   eventTitle: string
   ticketType: string
   price: string
-  onSuccess: (txHash: string, tokenId: string) => void
+  quantity?: number
+  /** Rejecting puts the modal into its error state, so callers must not swallow failures. */
+  onSuccess: (txHash: string, tokenId: string) => void | Promise<void>
 }
 
 export function TransactionModal({
@@ -22,282 +42,172 @@ export function TransactionModal({
   eventTitle,
   ticketType,
   price,
+  quantity = 1,
   onSuccess,
 }: TransactionModalProps) {
-  const [status, setStatus] = useState<'idle' | 'connecting' | 'confirming' | 'processing' | 'success' | 'error'>('idle')
-  const [txHash, setTxHash] = useState('')
-  const [tokenId, setTokenId] = useState('')
-  const [error, setError] = useState('')
+  const [status, setStatus] = useState<Status>("idle")
+  const [reference, setReference] = useState("")
+  const [error, setError] = useState("")
+  // Guards against React 18 StrictMode double-invoking the start effect.
+  const runningRef = useRef(false)
+
+  const total = (parseFloat(price) || 0) * quantity
+
+  const run = useCallback(async () => {
+    if (runningRef.current) return
+    runningRef.current = true
+
+    setError("")
+    try {
+      setStatus("authorising")
+      await wait(900)
+
+      setStatus("processing")
+      await wait(1100)
+
+      const txReference = "TXN" + Math.random().toString(36).slice(2, 12).toUpperCase()
+      const tokenId = String(Math.floor(Math.random() * 9000) + 1000)
+      setReference(txReference)
+
+      setStatus("issuing")
+      await wait(700)
+
+      // If the caller's write fails, the purchase did not happen — surface it
+      // instead of showing a success screen for a ticket that was never issued.
+      await onSuccess(txReference, tokenId)
+      setStatus("success")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.")
+      setStatus("error")
+    } finally {
+      runningRef.current = false
+    }
+  }, [onSuccess])
 
   useEffect(() => {
-    if (open && status === 'idle') {
-      handlePurchase()
+    if (open) {
+      setStatus("idle")
+      setReference("")
+      setError("")
+      run()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
-  const handlePurchase = async () => {
-    try {
-      // Step 1: Connect to MetaMask
-      setStatus('connecting')
-      await new Promise(resolve => setTimeout(resolve, 1500))
-
-      // Check if MetaMask is installed
-      if (typeof window !== 'undefined' && !(window as any).ethereum) {
-        setError('MetaMask is not installed. Please install MetaMask to continue.')
-        setStatus('error')
-        return
-      }
-
-      // Step 2: Request MetaMask confirmation
-      setStatus('confirming')
-      
-      // Simulate MetaMask popup
-      const accounts = await (window as any).ethereum.request({ 
-        method: 'eth_requestAccounts' 
-      }).catch(() => {
-        throw new Error('User rejected the request')
-      })
-
-      await new Promise(resolve => setTimeout(resolve, 2000))
-
-      // Step 3: Process transaction
-      setStatus('processing')
-      
-      // Simulate blockchain transaction
-      const mockTxHash = '0x' + Math.random().toString(16).substring(2, 66)
-      const mockTokenId = '#' + Math.floor(Math.random() * 10000)
-      
-      setTxHash(mockTxHash)
-      setTokenId(mockTokenId)
-
-      await new Promise(resolve => setTimeout(resolve, 3000))
-
-      // Step 4: Success
-      setStatus('success')
-      
-      // Call success callback after a short delay
-      setTimeout(() => {
-        onSuccess(mockTxHash, mockTokenId)
-      }, 2000)
-
-    } catch (err: any) {
-      setError(err.message || 'Transaction failed. Please try again.')
-      setStatus('error')
-    }
-  }
-
-  const getStatusIcon = () => {
-    switch (status) {
-      case 'connecting':
-      case 'confirming':
-      case 'processing':
-        return <Loader2 className="h-12 w-12 text-primary animate-spin" />
-      case 'success':
-        return <CheckCircle2 className="h-12 w-12 text-green-500" />
-      case 'error':
-        return <AlertCircle className="h-12 w-12 text-red-500" />
-      default:
-        return <Wallet className="h-12 w-12 text-primary" />
-    }
-  }
-
-  const getStatusText = () => {
-    switch (status) {
-      case 'connecting':
-        return 'Connecting to MetaMask...'
-      case 'confirming':
-        return 'Waiting for confirmation...'
-      case 'processing':
-        return 'Processing transaction...'
-      case 'success':
-        return 'Transaction successful!'
-      case 'error':
-        return 'Transaction failed'
-      default:
-        return 'Initializing...'
-    }
-  }
-
-  const getStatusDescription = () => {
-    switch (status) {
-      case 'connecting':
-        return 'Opening MetaMask wallet connection'
-      case 'confirming':
-        return 'Please confirm the transaction in MetaMask'
-      case 'processing':
-        return 'Your ticket NFT is being minted on the blockchain'
-      case 'success':
-        return 'Your ticket has been successfully minted and added to your wallet'
-      case 'error':
-        return error
-      default:
-        return ''
-    }
-  }
+  const inProgress = status === "authorising" || status === "processing" || status === "issuing"
+  const currentIndex = STEPS.findIndex(s => s.key === status)
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={next => {
+        // Don't let a click-away abandon an in-flight payment.
+        if (!next && inProgress) return
+        onOpenChange(next)
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Complete Purchase</DialogTitle>
+          <DialogTitle>{COPY[status].title}</DialogTitle>
           <DialogDescription>
-            Confirm your ticket purchase on the blockchain
+            {status === "error" ? error || "Something went wrong." : COPY[status].description}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Status Icon */}
-          <div className="flex flex-col items-center justify-center space-y-3">
-            <div className="p-4 bg-primary/10 rounded-full">
-              {getStatusIcon()}
-            </div>
-            <div className="text-center">
-              <h3 className="font-semibold text-lg">{getStatusText()}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{getStatusDescription()}</p>
-            </div>
+        <div className="space-y-5 py-2">
+          <div className="flex justify-center" role="status" aria-live="polite">
+            <span
+              className={`rounded-full p-4 ${
+                status === "success"
+                  ? "bg-emerald-500/10"
+                  : status === "error"
+                  ? "bg-destructive/10"
+                  : "bg-primary/10"
+              }`}
+            >
+              {status === "success" ? (
+                <CheckCircle2 className="h-10 w-10 text-emerald-600" aria-hidden="true" />
+              ) : status === "error" ? (
+                <AlertCircle className="h-10 w-10 text-destructive" aria-hidden="true" />
+              ) : (
+                <Loader2 className="h-10 w-10 animate-spin text-primary" aria-hidden="true" />
+              )}
+            </span>
+            <span className="sr-only">{COPY[status].title}</span>
           </div>
 
-          {/* Transaction Details */}
           <Card className="bg-muted/50">
-            <CardContent className="p-4 space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Event</span>
-                <span className="font-medium">{eventTitle}</span>
+            <CardContent className="p-4 space-y-2.5 text-sm">
+              <Row label="Event" value={eventTitle} />
+              <Row label="Ticket" value={`${ticketType}${quantity > 1 ? ` × ${quantity}` : ""}`} />
+              <div className="flex items-baseline justify-between border-t pt-2.5">
+                <span className="text-muted-foreground">Total</span>
+                <span className="font-bold text-primary tabular-nums">{formatINR(total)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Ticket Type</span>
-                <span className="font-medium">{ticketType}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Price</span>
-                <span className="font-bold text-primary">₹{price}</span>
-              </div>
-              {tokenId && (
-                <div className="flex justify-between text-sm pt-2 border-t">
-                  <span className="text-muted-foreground">Token ID</span>
-                  <Badge variant="secondary">{tokenId}</Badge>
+              {reference && (
+                <div className="flex items-center justify-between border-t pt-2.5">
+                  <span className="text-muted-foreground">Reference</span>
+                  <Badge variant="secondary" className="font-mono">{reference}</Badge>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Progress Steps */}
-          {status !== 'error' && (
-            <div className="space-y-2">
-              <div className={`flex items-center gap-2 text-sm ${
-                ['connecting', 'confirming', 'processing', 'success'].includes(status) 
-                  ? 'text-foreground' 
-                  : 'text-muted-foreground'
-              }`}>
-                <div className={`w-2 h-2 rounded-full ${
-                  ['connecting', 'confirming', 'processing', 'success'].includes(status)
-                    ? 'bg-primary'
-                    : 'bg-muted-foreground'
-                }`} />
-                <span>Connect wallet</span>
-                {['confirming', 'processing', 'success'].includes(status) && (
-                  <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto" />
-                )}
-              </div>
-              <div className={`flex items-center gap-2 text-sm ${
-                ['confirming', 'processing', 'success'].includes(status)
-                  ? 'text-foreground'
-                  : 'text-muted-foreground'
-              }`}>
-                <div className={`w-2 h-2 rounded-full ${
-                  ['confirming', 'processing', 'success'].includes(status)
-                    ? 'bg-primary'
-                    : 'bg-muted-foreground'
-                }`} />
-                <span>Confirm transaction</span>
-                {['processing', 'success'].includes(status) && (
-                  <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto" />
-                )}
-              </div>
-              <div className={`flex items-center gap-2 text-sm ${
-                ['processing', 'success'].includes(status)
-                  ? 'text-foreground'
-                  : 'text-muted-foreground'
-              }`}>
-                <div className={`w-2 h-2 rounded-full ${
-                  ['processing', 'success'].includes(status)
-                    ? 'bg-primary'
-                    : 'bg-muted-foreground'
-                }`} />
-                <span>Mint NFT ticket</span>
-                {status === 'success' && (
-                  <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto" />
-                )}
-              </div>
-            </div>
+          {status !== "error" && (
+            <ol className="space-y-2">
+              {STEPS.map((step, index) => {
+                const done = status === "success" || (currentIndex > -1 && index < currentIndex)
+                const active = step.key === status
+                return (
+                  <li
+                    key={step.key}
+                    className={`flex items-center gap-2 text-sm ${
+                      done || active ? "text-foreground" : "text-muted-foreground"
+                    }`}
+                  >
+                    {done ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" aria-hidden="true" />
+                    ) : active ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-primary flex-shrink-0" aria-hidden="true" />
+                    ) : (
+                      <span className="h-4 w-4 flex items-center justify-center flex-shrink-0">
+                        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
+                      </span>
+                    )}
+                    {step.label}
+                  </li>
+                )
+              })}
+            </ol>
           )}
 
-          {/* Transaction Hash */}
-          {txHash && status === 'success' && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Transaction Hash</label>
-              <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
-                <code className="text-xs flex-1 truncate">{txHash}</code>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => window.open(`https://etherscan.io/tx/${txHash}`, '_blank')}
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+          {inProgress && (
+            <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+              <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+              Secured demo checkout — no real payment is taken.
+            </p>
           )}
 
-          {/* Action Buttons */}
           <div className="flex gap-2">
-            {status === 'success' && (
-              <>
-                <Button
-                  className="flex-1"
-                  onClick={() => {
-                    onOpenChange(false)
-                    window.location.href = '/dashboard'
-                  }}
-                >
-                  <Wallet className="h-4 w-4 mr-2" />
-                  View in Wallet
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                >
-                  Close
-                </Button>
-              </>
+            {status === "success" && (
+              <Button className="w-full" onClick={() => onOpenChange(false)}>
+                Done
+              </Button>
             )}
-            {status === 'error' && (
+            {status === "error" && (
               <>
-                <Button
-                  className="flex-1"
-                  onClick={() => {
-                    setStatus('idle')
-                    setError('')
-                    handlePurchase()
-                  }}
-                >
-                  Try Again
+                <Button className="flex-1" onClick={run}>
+                  Try again
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                >
+                <Button variant="outline" onClick={() => onOpenChange(false)}>
                   Cancel
                 </Button>
               </>
             )}
-            {['connecting', 'confirming', 'processing'].includes(status) && (
-              <Button
-                className="w-full"
-                disabled
-              >
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Processing...
+            {inProgress && (
+              <Button className="w-full" disabled>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                Please wait…
               </Button>
             )}
           </div>
@@ -305,4 +215,17 @@ export function TransactionModal({
       </DialogContent>
     </Dialog>
   )
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-4">
+      <span className="text-muted-foreground flex-shrink-0">{label}</span>
+      <span className="font-medium text-right truncate">{value}</span>
+    </div>
+  )
+}
+
+function wait(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }

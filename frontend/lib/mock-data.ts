@@ -1,8 +1,10 @@
 // Complete hardcoded data store for demo
 import { Event, Ticket, MarketplaceListing } from './api'
+import { CURRENT_USER_ID } from './user'
 
-// Initialize from localStorage or use defaults
-const STORAGE_KEY = 'ticketd_demo_data'
+// Bump this when DEFAULT_DATA changes shape so stale localStorage from an older
+// build is discarded instead of being merged into the new schema.
+const STORAGE_KEY = 'ticketd_demo_data_v2'
 
 interface DemoData {
   events: Event[]
@@ -12,7 +14,7 @@ interface DemoData {
 }
 
 const DEFAULT_DATA: DemoData = {
-  userWallet: 'Rajesh Kumar',
+  userWallet: CURRENT_USER_ID,
   events: [
     {
       _id: '1',
@@ -411,50 +413,118 @@ const DEFAULT_DATA: DemoData = {
   ]
 }
 
+/** Deep copy so callers can never mutate DEFAULT_DATA through a returned reference. */
+function cloneDefaults(): DemoData {
+  return JSON.parse(JSON.stringify(DEFAULT_DATA)) as DemoData
+}
+
+function randomTxHash(): string {
+  let hex = ''
+  while (hex.length < 64) hex += Math.random().toString(16).slice(2)
+  return '0x' + hex.slice(0, 64)
+}
+
+let tokenCounter = 0
+function nextTokenId(): string {
+  tokenCounter += 1
+  return String(2000 + ((Date.now() + tokenCounter) % 90000))
+}
+
 class MockDataStore {
   private data: DemoData
+  private hydrated = false
+  private listeners = new Set<() => void>()
 
   constructor() {
-    this.data = this.loadData()
+    // Always start from defaults so server and first client render agree.
+    // localStorage is layered in via hydrate() after mount.
+    this.data = cloneDefaults()
   }
 
-  private loadData(): DemoData {
-    if (typeof window === 'undefined') return DEFAULT_DATA
-    
-    const stored = localStorage.getItem(STORAGE_KEY)
+  /**
+   * Load persisted state. Called on the client after mount; running this during
+   * render would desync SSR markup from the first client paint.
+   */
+  hydrate() {
+    if (this.hydrated || typeof window === 'undefined') return
+    this.hydrated = true
+
+    const stored = window.localStorage.getItem(STORAGE_KEY)
     if (stored) {
       try {
-        return JSON.parse(stored)
+        const parsed = JSON.parse(stored) as Partial<DemoData>
+        if (Array.isArray(parsed.events) && Array.isArray(parsed.tickets) && Array.isArray(parsed.listings)) {
+          this.data = {
+            userWallet: parsed.userWallet || CURRENT_USER_ID,
+            events: parsed.events,
+            tickets: parsed.tickets,
+            listings: parsed.listings,
+          }
+        }
       } catch {
-        return DEFAULT_DATA
+        this.data = cloneDefaults()
       }
     }
-    return DEFAULT_DATA
+    this.emit()
+  }
+
+  /** Subscribe to store mutations so open views refresh instead of showing stale data. */
+  subscribe(listener: () => void) {
+    this.listeners.add(listener)
+    return () => this.listeners.delete(listener)
+  }
+
+  private emit() {
+    this.listeners.forEach(listener => listener())
   }
 
   private saveData() {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data))
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data))
+      } catch (error) {
+        console.error('Failed to persist demo data:', error)
+      }
     }
+    this.emit()
+  }
+
+  getCurrentUser() {
+    return this.data.userWallet
   }
 
   // Events
   getEvents() {
-    return Promise.resolve([...this.data.events])
+    return Promise.resolve(this.data.events.map(e => ({ ...e })))
   }
 
   getEventById(id: string) {
     const event = this.data.events.find(e => e._id === id)
-    return Promise.resolve(event)
+    return Promise.resolve(event ? { ...event } : undefined)
+  }
+
+  createEvent(event: Event) {
+    this.data.events.unshift(event)
+    this.saveData()
+    return Promise.resolve({ ...event })
+  }
+
+  /**
+   * Owner match is intentionally forgiving: earlier builds stored the wallet
+   * address while the seed data uses a display name, and both may coexist in a
+   * returning user's localStorage.
+   */
+  private isOwnedByUser(owner: string): boolean {
+    const me = this.data.userWallet.toLowerCase()
+    return owner.toLowerCase() === me
   }
 
   // Tickets
   getTickets(owner?: string) {
-    let tickets = [...this.data.tickets]
+    let tickets = this.data.tickets
     if (owner) {
-      tickets = tickets.filter(t => t.owner.toLowerCase() === owner.toLowerCase())
+      tickets = tickets.filter(t => this.isOwnedByUser(t.owner))
     }
-    // Enrich with event data
     const enriched = tickets.map(ticket => ({
       ...ticket,
       event: this.data.events.find(e => e._id === ticket.eventId)
@@ -463,43 +533,51 @@ class MockDataStore {
   }
 
   purchaseTicket(eventId: string, ticketType: string, price: string) {
-    const tokenId = String(1000 + Math.floor(Math.random() * 9000))
+    const event = this.data.events.find(e => e._id === eventId)
+    if (!event) {
+      return Promise.reject(new Error('Event not found'))
+    }
+
+    const tier = event.ticketTypes.find(t => t.name === ticketType)
+    if (!tier) {
+      return Promise.reject(new Error('Ticket type not found'))
+    }
+    // Guard the oversell: without this the counter goes negative once a tier
+    // sells out and the UI keeps offering tickets that do not exist.
+    if (tier.available <= 0) {
+      return Promise.reject(new Error(`${ticketType} is sold out`))
+    }
+
     const newTicket: Ticket = {
-      _id: `t${Date.now()}`,
+      _id: `t${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       eventId,
-      tokenId,
+      tokenId: nextTokenId(),
       owner: this.data.userWallet,
       ticketType,
       price,
       purchaseDate: new Date().toISOString(),
       status: 'active',
       used: false,
-      transactionHash: '0x' + Math.random().toString(16).substr(2, 40)
+      transactionHash: randomTxHash()
     }
-    
+
     this.data.tickets.push(newTicket)
-    
-    // Update event availability
-    const event = this.data.events.find(e => e._id === eventId)
-    if (event) {
-      const ticketTypeObj = event.ticketTypes.find(t => t.name === ticketType)
-      if (ticketTypeObj && ticketTypeObj.available > 0) {
-        ticketTypeObj.available--
-      }
+    tier.available -= 1
+    if (event.ticketTypes.every(t => t.available === 0)) {
+      event.status = 'sold-out'
     }
-    
+
     this.saveData()
-    
-    return Promise.resolve({
-      ...newTicket,
-      event: this.data.events.find(e => e._id === eventId)
-    })
+
+    return Promise.resolve({ ...newTicket, event: { ...event } })
   }
 
   // Marketplace
-  getListings() {
-    const listings = this.data.listings.filter(l => l.status === 'active')
-    // Enrich with event data
+  getListings(includeInactive = false) {
+    const listings = includeInactive
+      ? this.data.listings
+      : this.data.listings.filter(l => l.status === 'active')
+
     const enriched = listings.map(listing => ({
       ...listing,
       event: this.data.events.find(e => e._id === listing.eventId)
@@ -507,33 +585,53 @@ class MockDataStore {
     return Promise.resolve(enriched)
   }
 
+  /** Listings created by the current user, in any state. */
+  getMyListings() {
+    const mine = this.data.listings.filter(l => this.isOwnedByUser(l.seller))
+    return Promise.resolve(
+      mine.map(listing => ({
+        ...listing,
+        event: this.data.events.find(e => e._id === listing.eventId)
+      }))
+    )
+  }
+
   purchaseListing(listingId: string) {
     const listing = this.data.listings.find(l => l._id === listingId)
     if (!listing) {
       return Promise.reject(new Error('Listing not found'))
     }
+    if (listing.status !== 'active') {
+      return Promise.reject(new Error('This listing is no longer available'))
+    }
+    if (this.isOwnedByUser(listing.seller)) {
+      return Promise.reject(new Error('You cannot buy your own listing'))
+    }
 
-    // Create new ticket for buyer
     const newTicket: Ticket = {
-      _id: `t${Date.now()}`,
+      _id: `t${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       eventId: listing.eventId,
-      tokenId: listing.tokenId || String(1000 + Math.floor(Math.random() * 9000)),
+      tokenId: listing.tokenId || nextTokenId(),
       owner: this.data.userWallet,
       ticketType: listing.ticketType || 'General',
       price: listing.price,
       purchaseDate: new Date().toISOString(),
       status: 'active',
       used: false,
-      transactionHash: '0x' + Math.random().toString(16).substr(2, 40)
+      transactionHash: randomTxHash()
     }
 
     this.data.tickets.push(newTicket)
-    
-    // Mark listing as sold
     listing.status = 'sold'
-    
+
+    // If the seller was this user, their source ticket is now transferred away.
+    const sourceTicket = this.data.tickets.find(t => t._id === listing.ticketId)
+    if (sourceTicket && sourceTicket._id !== newTicket._id && this.isOwnedByUser(sourceTicket.owner)) {
+      sourceTicket.status = 'used'
+    }
+
     this.saveData()
-    return Promise.resolve(newTicket)
+    return Promise.resolve({ ...newTicket })
   }
 
   createListing(ticketId: string, price: string) {
@@ -541,16 +639,26 @@ class MockDataStore {
     if (!ticket) {
       return Promise.reject(new Error('Ticket not found'))
     }
+    if (ticket.status === 'listed') {
+      return Promise.reject(new Error('This ticket is already listed'))
+    }
+    if (ticket.used || ticket.status === 'used') {
+      return Promise.reject(new Error('A used ticket cannot be listed'))
+    }
+    const numericPrice = parseFloat(price)
+    if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+      return Promise.reject(new Error('Enter a valid resale price'))
+    }
 
     const event = this.data.events.find(e => e._id === ticket.eventId)
-    
+
     const newListing: MarketplaceListing = {
-      _id: `l${Date.now()}`,
+      _id: `l${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       ticketId,
       eventId: ticket.eventId,
       tokenId: ticket.tokenId,
       seller: this.data.userWallet,
-      price,
+      price: String(Math.round(numericPrice)),
       originalPrice: ticket.price,
       status: 'active',
       listingDate: new Date().toISOString(),
@@ -561,16 +669,32 @@ class MockDataStore {
     }
 
     this.data.listings.push(newListing)
-    
-    // Update ticket status
     ticket.status = 'listed'
-    
+
     this.saveData()
-    return Promise.resolve(newListing)
+    return Promise.resolve({ ...newListing, event: event ? { ...event } : undefined })
+  }
+
+  /** Withdraw an active listing and return the ticket to the owner's wallet. */
+  cancelListing(listingId: string) {
+    const listing = this.data.listings.find(l => l._id === listingId)
+    if (!listing) {
+      return Promise.reject(new Error('Listing not found'))
+    }
+    if (listing.status !== 'active') {
+      return Promise.reject(new Error('Only active listings can be cancelled'))
+    }
+
+    listing.status = 'cancelled'
+    const ticket = this.data.tickets.find(t => t._id === listing.ticketId)
+    if (ticket) ticket.status = 'active'
+
+    this.saveData()
+    return Promise.resolve({ ...listing })
   }
 
   reset() {
-    this.data = DEFAULT_DATA
+    this.data = cloneDefaults()
     this.saveData()
   }
 }
