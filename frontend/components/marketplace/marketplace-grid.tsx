@@ -69,13 +69,14 @@ export function MarketplaceGrid({ filters }: { filters?: MarketplaceFilterState 
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-3xl font-bold">Resale Marketplace</h2>
-          <p className="text-muted-foreground mt-1">
-            {loading ? "Loading..." : `${sortedListings.length} ticket${sortedListings.length !== 1 ? 's' : ''} available`}
-          </p>
-        </div>
+      {/* The page header already names this view; here we only report the
+          result count and expose sorting. */}
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          {loading
+            ? "Loading tickets…"
+            : `${sortedListings.length} ticket${sortedListings.length !== 1 ? "s" : ""} available`}
+        </p>
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-full sm:w-56">
             <SelectValue placeholder="Sort by" />

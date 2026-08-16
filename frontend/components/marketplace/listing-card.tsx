@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, MapPin, User, TrendingUp, TrendingDown, ShoppingCart } from "lucide-react"
-import Image from "next/image"
+import { EventImage } from "@/components/ui/event-image"
 import { formatEventDate, formatINR, percentChange } from "@/lib/utils"
 import { MarketplaceListing } from "@/lib/api"
 import { displayParty } from "@/lib/user"
@@ -43,14 +43,14 @@ export function ListingCard({ listing, onPurchase }: ListingCardProps) {
   }
 
   return (
-    <Card className="group flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
-      <div className="relative h-44 flex-shrink-0">
-        <Image
+    <Card className="group flex flex-col overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lifted">
+      <div className="relative h-44 flex-shrink-0 overflow-hidden bg-muted">
+        <EventImage
           src={image}
           alt=""
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 
@@ -63,7 +63,7 @@ export function ListingCard({ listing, onPurchase }: ListingCardProps) {
         {changePct !== null && Math.abs(changePct) >= 0.1 && (
           <div
             className={`absolute top-3 right-3 flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-white backdrop-blur-sm ${
-              isUp ? "bg-rose-600/90" : "bg-emerald-600/90"
+              isUp ? "bg-destructive/90" : "bg-success/90"
             }`}
           >
             {isUp ? (
@@ -76,7 +76,7 @@ export function ListingCard({ listing, onPurchase }: ListingCardProps) {
           </div>
         )}
 
-        <h3 className="absolute bottom-3 left-3 right-3 line-clamp-2 text-lg font-bold text-white drop-shadow-lg">
+        <h3 className="absolute bottom-3 left-3 right-3 line-clamp-2 text-base font-semibold leading-snug text-white drop-shadow">
           {title}
         </h3>
       </div>
@@ -85,18 +85,18 @@ export function ListingCard({ listing, onPurchase }: ListingCardProps) {
         <div className="space-y-2 text-sm text-muted-foreground">
           {eventDate && (
             <div className="flex items-center">
-              <Calendar className="mr-2 h-4 w-4 flex-shrink-0 text-primary" aria-hidden="true" />
+              <Calendar className="mr-2 h-4 w-4 flex-shrink-0" aria-hidden="true" />
               <span className="truncate">{formatEventDate(eventDate)}</span>
             </div>
           )}
           {location && (
             <div className="flex items-center">
-              <MapPin className="mr-2 h-4 w-4 flex-shrink-0 text-primary" aria-hidden="true" />
+              <MapPin className="mr-2 h-4 w-4 flex-shrink-0" aria-hidden="true" />
               <span className="truncate">{location}</span>
             </div>
           )}
           <div className="flex items-center">
-            <User className="mr-2 h-4 w-4 flex-shrink-0 text-primary" aria-hidden="true" />
+            <User className="mr-2 h-4 w-4 flex-shrink-0" aria-hidden="true" />
             <span className="truncate">Sold by {displayParty(listing.seller)}</span>
           </div>
         </div>

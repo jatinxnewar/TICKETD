@@ -119,14 +119,14 @@ export function TransactionModal({
             <span
               className={`rounded-full p-4 ${
                 status === "success"
-                  ? "bg-emerald-500/10"
+                  ? "bg-success-subtle"
                   : status === "error"
                   ? "bg-destructive/10"
                   : "bg-primary/10"
               }`}
             >
               {status === "success" ? (
-                <CheckCircle2 className="h-10 w-10 text-emerald-600" aria-hidden="true" />
+                <CheckCircle2 className="h-10 w-10 text-success" aria-hidden="true" />
               ) : status === "error" ? (
                 <AlertCircle className="h-10 w-10 text-destructive" aria-hidden="true" />
               ) : (
@@ -166,7 +166,7 @@ export function TransactionModal({
                     }`}
                   >
                     {done ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" aria-hidden="true" />
+                      <CheckCircle2 className="h-4 w-4 text-success flex-shrink-0" aria-hidden="true" />
                     ) : active ? (
                       <Loader2 className="h-4 w-4 animate-spin text-primary flex-shrink-0" aria-hidden="true" />
                     ) : (

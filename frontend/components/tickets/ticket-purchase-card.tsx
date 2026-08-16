@@ -66,14 +66,14 @@ export function TicketPurchaseCard({ event }: TicketPurchaseCardProps) {
   }
 
   return (
-    <Card className="sticky top-24 shadow-xl">
-      <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5">
+    <Card className="sticky top-24">
+      <CardHeader className="border-b">
         <CardTitle className="flex items-center justify-between">
-          <span>Select Tickets</span>
-          <ShoppingCart className="h-5 w-5" />
+          <span>Select tickets</span>
+          <ShoppingCart className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-6 space-y-4">
+      <CardContent className="space-y-3 p-4 sm:p-5">
         {event.ticketTypes && event.ticketTypes.length > 0 ? (
           event.ticketTypes.map((ticket, index) => {
             const isAvailable = (ticket.available || 0) > 0
@@ -123,7 +123,7 @@ export function TicketPurchaseCard({ event }: TicketPurchaseCardProps) {
                   <span className="text-muted-foreground">Available</span>
                   <span
                     className={`font-medium tabular-nums ${
-                      soldOut ? "text-destructive" : almostSoldOut ? "text-amber-600" : "text-emerald-600"
+                      soldOut ? "text-destructive" : almostSoldOut ? "text-warning" : "text-success"
                     }`}
                   >
                     {(ticket.available || 0).toLocaleString("en-IN")} left

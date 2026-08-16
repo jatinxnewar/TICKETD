@@ -2,9 +2,8 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Calendar, MapPin, Tag } from "lucide-react"
-import Image from "next/image"
+import { Calendar, MapPin, Tag, ArrowRight } from "lucide-react"
+import { EventImage } from "@/components/ui/event-image"
 import Link from "next/link"
 import { formatEventDate, formatINR } from "@/lib/utils"
 import { Event } from "@/lib/api"
@@ -27,16 +26,16 @@ export function EventCard({ event }: EventCardProps) {
   const soldOut = event.status === "sold-out" || totalAvailable === 0
 
   return (
-    <Card className="group flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
-      <div className="relative h-52 flex-shrink-0">
-        <Image
+    <Card className="group relative flex flex-col overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lifted focus-within:border-primary/40">
+      <div className="relative h-48 flex-shrink-0 overflow-hidden bg-muted">
+        <EventImage
           src={event.image || "/placeholder.jpg"}
           alt=""
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
 
         <Badge variant="secondary" className="absolute right-3 top-3 bg-background/90 backdrop-blur-sm">
           {event.category}
@@ -47,15 +46,19 @@ export function EventCard({ event }: EventCardProps) {
             Sold out
           </Badge>
         ) : soldPercentage > 70 ? (
-          <Badge className="absolute left-3 top-3 bg-amber-600 hover:bg-amber-600">
+          <Badge className="absolute left-3 top-3 bg-warning text-warning-foreground">
             {soldPercentage}% sold
           </Badge>
         ) : null}
       </div>
 
       <CardContent className="flex flex-1 flex-col p-5">
-        <h3 className="mb-2 line-clamp-2 text-lg font-bold leading-snug transition-colors group-hover:text-primary">
-          {event.title}
+        <h3 className="mb-2 line-clamp-2 text-base font-semibold leading-snug transition-colors group-hover:text-primary">
+          {/* Stretched link makes the whole card the hit target while keeping
+              a single, correctly-labelled link for assistive tech. */}
+          <Link href={`/events/${event._id}`} className="after:absolute after:inset-0">
+            {event.title}
+          </Link>
         </h3>
 
         <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">{event.description}</p>
@@ -74,7 +77,7 @@ export function EventCard({ event }: EventCardProps) {
           </div>
           <div className="flex items-center">
             <Tag className="mr-2 h-4 w-4 flex-shrink-0" aria-hidden="true" />
-            <span className={soldOut ? "text-destructive" : totalAvailable < 500 ? "text-amber-600" : ""}>
+            <span className={soldOut ? "text-destructive" : totalAvailable < 500 ? "text-warning" : ""}>
               {soldOut
                 ? "No tickets left"
                 : `${totalAvailable.toLocaleString("en-IN")} tickets left`}
@@ -85,13 +88,18 @@ export function EventCard({ event }: EventCardProps) {
         <div className="mt-auto flex items-end justify-between gap-3 border-t pt-4">
           <div className="min-w-0">
             <p className="text-xs text-muted-foreground">Starting from</p>
-            <span className="text-2xl font-bold text-primary tabular-nums">
+            <span className="text-xl font-bold tabular-nums">
               {lowestPrice === null ? "—" : formatINR(lowestPrice)}
             </span>
           </div>
-          <Button asChild className="flex-shrink-0 font-semibold" variant={soldOut ? "outline" : "default"}>
-            <Link href={`/events/${event._id}`}>{soldOut ? "View event" : "Get tickets"}</Link>
-          </Button>
+          {/* Visual affordance only — the stretched title link handles the click. */}
+          <span
+            aria-hidden="true"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-primary transition-transform group-hover:translate-x-0.5"
+          >
+            {soldOut ? "View" : "Get tickets"}
+            <ArrowRight className="h-4 w-4" />
+          </span>
         </div>
       </CardContent>
     </Card>

@@ -31,49 +31,49 @@ export function StatsCards() {
       value: String(tickets.length),
       description: `${activeTickets.length} ready to use`,
       icon: Ticket,
-      accent: "text-blue-600 dark:text-blue-400",
-      surface: "bg-blue-500/10",
+      accent: "text-primary",
+      surface: "bg-info-subtle",
     },
     {
       title: "Total Spent",
       value: formatINR(totalSpent),
       description: `Across ${tickets.length} purchase${tickets.length === 1 ? "" : "s"}`,
       icon: ShoppingBag,
-      accent: "text-violet-600 dark:text-violet-400",
-      surface: "bg-violet-500/10",
+      accent: "text-foreground",
+      surface: "bg-muted",
     },
     {
       title: "Listed for Resale",
       value: String(activeListings.length),
       description: activeListings.length ? "Live on the marketplace" : "Nothing listed right now",
       icon: Tag,
-      accent: "text-amber-600 dark:text-amber-400",
-      surface: "bg-amber-500/10",
+      accent: "text-warning",
+      surface: "bg-warning-subtle",
     },
     {
       title: "Resale Earnings",
       value: formatINR(earned),
       description: `${soldListings.length} ticket${soldListings.length === 1 ? "" : "s"} sold`,
       icon: TrendingUp,
-      accent: "text-emerald-600 dark:text-emerald-400",
-      surface: "bg-emerald-500/10",
+      accent: "text-success",
+      surface: "bg-success-subtle",
     },
   ]
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-[7.5rem] rounded-xl border bg-muted/40 animate-pulse" />
+          <div key={i} className="h-[7.5rem] animate-pulse rounded-xl border bg-muted/50" />
         ))}
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {stats.map(stat => (
-        <Card key={stat.title} className="transition-shadow hover:shadow-md">
+        <Card key={stat.title} className="transition-shadow duration-200 hover:shadow-lifted">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
             <span className={`rounded-lg p-2 ${stat.surface}`}>
@@ -81,8 +81,8 @@ export function StatsCards() {
             </span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold tracking-tight tabular-nums">{stat.value}</div>
-            <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+            <div className="text-2xl font-bold tabular-nums tracking-tight">{stat.value}</div>
+            <p className="mt-1 text-xs text-muted-foreground">{stat.description}</p>
           </CardContent>
         </Card>
       ))}

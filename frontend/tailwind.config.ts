@@ -13,7 +13,12 @@ const config: Config = {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      // 2rem was cramped on small screens; scale the gutter with viewport.
+      padding: {
+        DEFAULT: "1rem",
+        sm: "1.5rem",
+        lg: "2rem",
+      },
       screens: {
         "2xl": "1400px",
       },
@@ -53,11 +58,36 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Semantic status colours, so components stop reaching for raw
+        // palette values that break contrast in dark mode.
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+          subtle: "hsl(var(--success-subtle))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+          subtle: "hsl(var(--warning-subtle))",
+        },
+        "danger-subtle": "hsl(var(--danger-subtle))",
+        "info-subtle": "hsl(var(--info-subtle))",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      fontSize: {
+        // Slightly tightened display sizes for headings.
+        "display-sm": ["2rem", { lineHeight: "1.15", letterSpacing: "-0.02em" }],
+        "display-md": ["2.75rem", { lineHeight: "1.1", letterSpacing: "-0.025em" }],
+        "display-lg": ["3.5rem", { lineHeight: "1.05", letterSpacing: "-0.03em" }],
+      },
+      boxShadow: {
+        // Layered, low-opacity shadows read cleaner than a single large blur.
+        subtle: "0 1px 2px 0 hsl(224 32% 12% / 0.04), 0 1px 3px 0 hsl(224 32% 12% / 0.06)",
+        lifted: "0 2px 4px -1px hsl(224 32% 12% / 0.05), 0 8px 16px -4px hsl(224 32% 12% / 0.08)",
       },
       keyframes: {
         "accordion-down": {
@@ -68,10 +98,15 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "fade-in": {
+          from: { opacity: "0", transform: "translateY(4px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-in": "fade-in 0.3s ease-out",
       },
     },
   },

@@ -90,7 +90,7 @@ export function ReviewAndDeploy({ data, onPrevious }: ReviewAndDeployProps) {
   if (createdEventId) {
     return (
       <div className="space-y-6 text-center">
-        <CheckCircle className="mx-auto h-16 w-16 text-emerald-500" aria-hidden="true" />
+        <CheckCircle className="mx-auto h-16 w-16 text-success" aria-hidden="true" />
         <div>
           <h2 className="mb-2 text-2xl font-bold">Event published</h2>
           <p className="text-muted-foreground">

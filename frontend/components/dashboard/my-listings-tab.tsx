@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
+import { EventImage } from "@/components/ui/event-image"
 import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -100,7 +100,7 @@ export function MyListingsTab() {
               <CardContent className="p-0">
                 <div className="flex flex-col sm:flex-row">
                   <div className="relative h-32 sm:h-auto sm:w-44 flex-shrink-0">
-                    <Image
+                    <EventImage
                       src={listing.eventImage || listing.event?.image || "/placeholder.jpg"}
                       alt=""
                       fill
@@ -134,7 +134,7 @@ export function MyListingsTab() {
                         {change !== null && Math.abs(change) >= 0.1 && (
                           <p
                             className={`flex items-center justify-end gap-1 text-xs font-medium ${
-                              isUp ? "text-emerald-600" : "text-destructive"
+                              isUp ? "text-success" : "text-destructive"
                             }`}
                           >
                             {isUp ? (

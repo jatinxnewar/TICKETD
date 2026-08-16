@@ -98,12 +98,12 @@ export function ListForResaleModal({
               </CardContent>
             </Card>
           ) : (
-            <Card className="bg-emerald-500/10 border-emerald-500/20">
+            <Card className="bg-success-subtle border-success/25">
               <CardContent className="p-4">
                 <div className="flex items-start gap-2">
-                  <TrendingUp className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <TrendingUp className="h-5 w-5 text-success mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
-                    <p className="font-semibold text-sm text-emerald-700 dark:text-emerald-500">
+                    <p className="font-semibold text-sm text-success">
                       Eligible for resale
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -174,7 +174,7 @@ export function ListForResaleModal({
                   <span
                     className={`font-semibold ${
                       priceDiff > 0
-                        ? "text-emerald-600"
+                        ? "text-success"
                         : priceDiff < 0
                         ? "text-destructive"
                         : "text-muted-foreground"

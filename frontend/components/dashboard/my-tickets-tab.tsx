@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, MapPin, Ticket as TicketIcon, TrendingUp } from "lucide-react"
-import Image from "next/image"
+import { EventImage } from "@/components/ui/event-image"
 import { formatEventDate, formatINR } from "@/lib/utils"
 import { ticketsApi, Ticket, marketplaceApi } from "@/lib/api"
 import { CURRENT_USER_ID } from "@/lib/user"
@@ -56,9 +56,9 @@ export function MyTicketsTab() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-80 bg-secondary/20 animate-pulse rounded-lg" />
+          <div key={i} className="h-80 animate-pulse rounded-xl border bg-muted/50" />
         ))}
       </div>
     )
@@ -66,25 +66,29 @@ export function MyTicketsTab() {
 
   if (tickets.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 space-y-4">
-        <div className="text-6xl mb-4">🎫</div>
-        <h3 className="text-xl font-semibold">No Tickets Yet</h3>
-        <p className="text-muted-foreground text-center max-w-md">
-          You haven't purchased any tickets yet. Browse events and get your first NFT ticket!
-        </p>
-        <Button onClick={() => router.push('/events')} className="mt-4">
-          Browse Events
-        </Button>
-      </div>
+      <Card>
+        <CardContent className="flex flex-col items-center px-6 py-16 text-center">
+          <span className="mb-4 rounded-full bg-muted p-4">
+            <TicketIcon className="h-7 w-7 text-muted-foreground" aria-hidden="true" />
+          </span>
+          <h3 className="mb-1 text-lg font-semibold">No tickets yet</h3>
+          <p className="mb-6 max-w-sm text-muted-foreground">
+            Tickets you buy will appear here, ready to use or resell.
+          </p>
+          <Button onClick={() => router.push("/events")}>Browse events</Button>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">My NFT Tickets</h2>
-          <p className="text-muted-foreground">{tickets.length} ticket{tickets.length !== 1 ? 's' : ''} owned</p>
+          <h2 className="text-2xl font-bold tracking-tight">My tickets</h2>
+          <p className="text-muted-foreground">
+            {tickets.length} ticket{tickets.length !== 1 ? "s" : ""} owned
+          </p>
         </div>
         <Button variant="outline" onClick={refresh}>
           Refresh
@@ -100,86 +104,93 @@ export function MyTicketsTab() {
           const isUsed = ticket.used
 
           return (
-            <Card key={ticket._id} className="group hover:shadow-xl transition-all duration-300 overflow-hidden border-0 bg-card">
-              <div className="relative">
-                <Image
+            <Card
+              key={ticket._id}
+              className="group flex flex-col overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lifted"
+            >
+              <div className="relative h-44 flex-shrink-0 overflow-hidden bg-muted">
+                <EventImage
                   src={event.image || "/placeholder.jpg"}
-                  alt={event.title || 'Event'}
-                  width={400}
-                  height={200}
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
+                  alt=""
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                
-                <Badge 
-                  variant={isUsed ? "secondary" : isListed ? "outline" : "default"}
-                  className="absolute top-3 right-3 bg-background/90 backdrop-blur-sm"
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+
+                {/* Explicit colours: a `default` badge with an overridden
+                    background keeps its light foreground and vanishes. */}
+                <span
+                  className={`absolute right-3 top-3 rounded-full px-2.5 py-0.5 text-xs font-medium backdrop-blur-sm ${
+                    isUsed
+                      ? "bg-background/90 text-muted-foreground"
+                      : isListed
+                      ? "bg-warning text-warning-foreground"
+                      : "bg-success text-success-foreground"
+                  }`}
                 >
-                  {isUsed ? 'Used' : isListed ? 'Listed' : 'Active'}
-                </Badge>
-                
-                <div className="absolute bottom-3 left-3 right-3">
-                  <h3 className="font-bold text-white text-lg line-clamp-1 drop-shadow-lg">
+                  {isUsed ? "Used" : isListed ? "Listed" : "Active"}
+                </span>
+
+                <div className="absolute inset-x-3 bottom-3">
+                  <h3 className="line-clamp-1 text-base font-semibold text-white drop-shadow">
                     {event.title}
                   </h3>
-                  <Badge variant="secondary" className="mt-2">
+                  <span className="mt-1.5 inline-block rounded bg-white/15 px-1.5 py-0.5 font-mono text-xs text-white backdrop-blur-sm">
                     #{ticket.tokenId}
-                  </Badge>
+                  </span>
                 </div>
               </div>
 
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center justify-between">
-                  <span className="font-semibold">{ticket.ticketType}</span>
-                  <span className="text-primary font-bold">{formatINR(ticket.price)}</span>
+                <CardTitle className="flex items-center justify-between gap-3 text-base">
+                  <span className="truncate font-semibold">{ticket.ticketType}</span>
+                  <span className="flex-shrink-0 font-bold tabular-nums">{formatINR(ticket.price)}</span>
                 </CardTitle>
               </CardHeader>
 
-              <CardContent className="space-y-4">
-                <div className="space-y-2.5 text-sm">
-                  <div className="flex items-center text-muted-foreground">
-                    <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span className="truncate">{formatEventDate(new Date(event.date))}</span>
+              <CardContent className="flex flex-1 flex-col gap-4">
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <div className="flex items-center">
+                    <Calendar className="mr-2 h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                    <span className="truncate">{formatEventDate(event.date)}</span>
                   </div>
-                  <div className="flex items-center text-muted-foreground">
-                    <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <div className="flex items-center">
+                    <MapPin className="mr-2 h-4 w-4 flex-shrink-0" aria-hidden="true" />
                     <span className="truncate">{event.location}</span>
                   </div>
-                  <div className="flex items-center text-muted-foreground">
-                    <TicketIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span className="truncate text-xs">
-                      Purchased {new Date(ticket.purchaseDate).toLocaleDateString()}
-                    </span>
+                  <div className="flex items-center">
+                    <TicketIcon className="mr-2 h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                    <span className="truncate">Purchased {formatEventDate(ticket.purchaseDate)}</span>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t space-y-2">
+                <div className="mt-auto border-t pt-4">
                   {!isUsed && !isListed && (
-                    <>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => handleListForResale(ticket)}
-                      >
-                        <TrendingUp className="h-4 w-4 mr-2" />
-                        List for Resale
-                      </Button>
-                    </>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => handleListForResale(ticket)}
+                    >
+                      <TrendingUp className="mr-2 h-4 w-4" aria-hidden="true" />
+                      List for resale
+                    </Button>
                   )}
 
                   {isListed && (
-                    <div className="bg-secondary/30 rounded-lg p-3 text-center">
-                      <p className="text-sm text-muted-foreground mb-1">Listed on Marketplace</p>
-                      <Button variant="link" size="sm" onClick={() => router.push('/marketplace')}>
-                        View Listing
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      className="w-full"
+                      onClick={() => router.push("/marketplace")}
+                    >
+                      View on marketplace
+                    </Button>
                   )}
 
                   {isUsed && (
-                    <div className="bg-secondary/30 rounded-lg p-3 text-center">
-                      <p className="text-sm text-muted-foreground">Ticket has been used</p>
-                    </div>
+                    <p className="py-2 text-center text-sm text-muted-foreground">
+                      This ticket has been used
+                    </p>
                   )}
                 </div>
               </CardContent>

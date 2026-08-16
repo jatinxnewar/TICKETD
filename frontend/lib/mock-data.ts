@@ -4,7 +4,7 @@ import { CURRENT_USER_ID } from './user'
 
 // Bump this when DEFAULT_DATA changes shape so stale localStorage from an older
 // build is discarded instead of being merged into the new schema.
-const STORAGE_KEY = 'ticketd_demo_data_v2'
+const STORAGE_KEY = 'ticketd_demo_data_v3'
 
 interface DemoData {
   events: Event[]
@@ -68,7 +68,7 @@ const DEFAULT_DATA: DemoData = {
       location: 'Ahmedabad, Gujarat',
       organizer: 'Sneha Patel Cultural Trust',
       category: 'Cultural',
-      image: 'https://images.unsplash.com/photo-1605979399824-0ff3e2456812?w=800',
+      image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800',
       maxAttendees: 15000,
       ticketTypes: [
         { name: '9-Night Pass', price: '5000', quantity: 8000, available: 5234 },
@@ -236,7 +236,7 @@ const DEFAULT_DATA: DemoData = {
       location: 'Kolkata, West Bengal',
       organizer: 'Subhash Chatterjee Cultural Society',
       category: 'Cultural',
-      image: 'https://images.unsplash.com/photo-1603893488883-e4a8c2f76c86?w=800',
+      image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800',
       maxAttendees: 50000,
       ticketTypes: [
         { name: '4-Day Festival Pass', price: '2500', quantity: 30000, available: 24567 },
@@ -393,7 +393,7 @@ const DEFAULT_DATA: DemoData = {
       ticketType: 'VIP Couple Pass',
       eventTitle: 'Navratri Mahotsav - Garba Festival',
       eventDate: '2026-10-15T19:30:00',
-      eventImage: 'https://images.unsplash.com/photo-1605979399824-0ff3e2456812?w=800'
+      eventImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800'
     },
     {
       _id: 'l6',

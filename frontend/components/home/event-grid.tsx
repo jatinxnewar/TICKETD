@@ -6,6 +6,7 @@ import { ArrowRight } from "lucide-react"
 import { eventsApi } from "@/lib/api"
 import { useStoreData } from "@/hooks/useStoreData"
 import { EventCard } from "@/components/events/event-card"
+import { SectionHeading } from "@/components/layout/section-heading"
 
 export function EventGrid() {
   const { data, loading, error, refresh } = useStoreData(
@@ -19,29 +20,21 @@ export function EventGrid() {
   if (!loading && !error && events.length === 0) return null
 
   return (
-    <section className="py-16">
-      <div className="container mx-auto max-w-7xl px-4">
-        <div className="mb-10 flex items-end justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <span className="h-1 w-10 rounded-full bg-primary" />
-              <span className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-                More to explore
-              </span>
-            </div>
-            <h2 className="text-3xl font-bold tracking-tight">Discover Events</h2>
-            <p className="max-w-2xl text-muted-foreground">
-              From classical performances to modern celebrations — find your next experience.
-            </p>
-          </div>
-
-          <Button asChild variant="outline" className="hidden flex-shrink-0 md:inline-flex">
-            <Link href="/events">
-              Explore all
-              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-            </Link>
-          </Button>
-        </div>
+    <section className="py-16 sm:py-20">
+      <div className="container mx-auto max-w-7xl">
+        <SectionHeading
+          eyebrow="More to explore"
+          title="Discover events"
+          description="From classical performances to modern celebrations — find your next experience."
+          action={
+            <Button asChild variant="outline">
+              <Link href="/events">
+                Explore all
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
+          }
+        />
 
         {loading ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -64,20 +57,27 @@ export function EventGrid() {
           </div>
         )}
 
-        <div className="mt-14 rounded-2xl border bg-muted/30 px-6 py-10 text-center">
-          <h3 className="text-2xl font-bold tracking-tight">Hosting something of your own?</h3>
-          <p className="mx-auto mt-2 max-w-xl text-muted-foreground">
-            List your event on Ticket'D and reach audiences across India, with resale built in from
-            day one.
+        <div className="mt-8 flex justify-center md:hidden">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
+            <Link href="/events">
+              Explore all events
+              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="surface-gradient mt-16 rounded-2xl border px-6 py-12 text-center">
+          <h2 className="text-2xl font-bold tracking-tight">Hosting something of your own?</h2>
+          <p className="mx-auto mt-2 max-w-lg text-muted-foreground">
+            List your event on Ticket'D and reach audiences across India, with fair-priced resale
+            built in from day one.
           </p>
-          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-            <Button asChild size="lg">
-              <Link href="/create">Create an event</Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link href="/events">Browse all events</Link>
-            </Button>
-          </div>
+          <Button asChild size="lg" className="mt-6">
+            <Link href="/create">
+              Create an event
+              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+            </Link>
+          </Button>
         </div>
       </div>
     </section>

@@ -6,6 +6,7 @@ import { ArrowRight } from "lucide-react"
 import { eventsApi } from "@/lib/api"
 import { useStoreData } from "@/hooks/useStoreData"
 import { EventCard } from "@/components/events/event-card"
+import { SectionHeading } from "@/components/layout/section-heading"
 
 export function FeaturedEvents() {
   const { data, loading } = useStoreData(() => eventsApi.getAll(), "Could not load featured events.")
@@ -14,29 +15,21 @@ export function FeaturedEvents() {
   if (!loading && events.length === 0) return null
 
   return (
-    <section className="border-t bg-muted/20 py-16">
-      <div className="container mx-auto max-w-7xl px-4">
-        <div className="mb-10 flex items-end justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <span className="h-1 w-10 rounded-full bg-primary" />
-              <span className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-                Top picks
-              </span>
-            </div>
-            <h2 className="text-3xl font-bold tracking-tight">Featured Events</h2>
-            <p className="max-w-2xl text-muted-foreground">
-              Handpicked events happening across India, from concerts to cultural celebrations.
-            </p>
-          </div>
-
-          <Button asChild variant="outline" className="hidden flex-shrink-0 md:inline-flex">
-            <Link href="/events">
-              View all
-              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-            </Link>
-          </Button>
-        </div>
+    <section className="border-b bg-muted/30 py-16 sm:py-20">
+      <div className="container mx-auto max-w-7xl">
+        <SectionHeading
+          eyebrow="Top picks"
+          title="Featured events"
+          description="Handpicked events happening across India, from concerts to cultural celebrations."
+          action={
+            <Button asChild variant="outline">
+              <Link href="/events">
+                View all
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
+          }
+        />
 
         {loading ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -52,8 +45,8 @@ export function FeaturedEvents() {
           </div>
         )}
 
-        <div className="mt-10 flex justify-center md:hidden">
-          <Button asChild>
+        <div className="mt-8 flex justify-center md:hidden">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href="/events">
               View all events
               <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />

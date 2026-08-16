@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar, MapPin, Users, Share2, Info, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import Image from "next/image"
+import { EventImage } from "@/components/ui/event-image"
 import { useState } from "react"
 import { formatEventDate } from "@/lib/utils"
 import { Event } from "@/lib/api"
@@ -52,80 +52,65 @@ export function EventDetail({ event }: EventDetailProps) {
       {/* Hero Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         <div className="lg:col-span-2 space-y-6">
-          <div className="relative rounded-xl overflow-hidden shadow-2xl">
-            <Image
+          <div className="relative overflow-hidden rounded-xl border shadow-subtle">
+            <EventImage
               src={event.image || "/placeholder.jpg"}
-              alt={event.title}
+              alt=""
               width={1200}
               height={600}
-              className="w-full h-64 md:h-96 object-cover"
+              priority
+              className="h-64 w-full object-cover md:h-96"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-6">
-              <Badge className="mb-3 bg-background/90 backdrop-blur-sm text-foreground">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+              <Badge className="mb-3 bg-background/90 text-foreground backdrop-blur-sm">
                 {event.category}
               </Badge>
-              <h1 className="text-3xl md:text-5xl font-bold text-white drop-shadow-lg mb-2">
-                {event.title}
-              </h1>
-              <div className="flex items-center gap-2 text-white/90">
-                <Calendar className="h-4 w-4" />
-                <span className="font-medium">{formatEventDate(event.date)} • {event.time}</span>
+              <h1 className="mb-2 text-3xl font-bold text-white md:text-5xl">{event.title}</h1>
+              <div className="flex items-center gap-2 text-sm text-white/90">
+                <Calendar className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                <span className="font-medium">
+                  {formatEventDate(event.date)}
+                  {event.time ? ` · ${event.time}` : ""}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Quick Info */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Calendar className="h-5 w-5 text-primary" />
+          {/* Quick facts — one neutral surface, colour reserved for status. */}
+          <Card>
+            <CardContent className="grid grid-cols-1 divide-y p-0 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+              {[
+                { icon: Calendar, label: "Date", value: formatEventDate(event.date) },
+                { icon: MapPin, label: "Location", value: event.location },
+                {
+                  icon: Users,
+                  label: "Tickets left",
+                  value: `${totalAvailable.toLocaleString("en-IN")} of ${totalQuantity.toLocaleString("en-IN")}`,
+                },
+              ].map(fact => (
+                <div key={fact.label} className="flex items-center gap-3 p-4">
+                  <span className="flex-shrink-0 rounded-lg bg-muted p-2">
+                    <fact.icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground">{fact.label}</p>
+                    <p className="truncate text-sm font-semibold tabular-nums">{fact.value}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Date & Time</p>
-                  <p className="font-semibold text-sm">{formatEventDate(event.date)}</p>
-                </div>
-              </CardContent>
-            </Card>
+              ))}
+            </CardContent>
+          </Card>
 
-            <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2 bg-blue-500/10 rounded-lg">
-                  <MapPin className="h-5 w-5 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Location</p>
-                  <p className="font-semibold text-sm truncate">{event.location}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2 bg-green-500/10 rounded-lg">
-                  <Users className="h-5 w-5 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Tickets Available</p>
-                  <p className="font-semibold text-sm tabular-nums">
-                    {totalAvailable.toLocaleString("en-IN")} of {totalQuantity.toLocaleString("en-IN")}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Progress Bar */}
           {soldPercentage > 0 && (
             <Card>
               <CardContent className="p-4">
-                <div className="flex justify-between items-center mb-2">
+                <div className="mb-2 flex items-center justify-between">
                   <span className="text-sm font-medium">Tickets sold</span>
-                  <span className="text-sm font-bold text-primary tabular-nums">{soldPercentage}%</span>
+                  <span className="text-sm font-semibold tabular-nums">{soldPercentage}%</span>
                 </div>
                 <div
-                  className="w-full bg-secondary rounded-full h-2.5 overflow-hidden"
+                  className="h-2 w-full overflow-hidden rounded-full bg-secondary"
                   role="progressbar"
                   aria-valuenow={soldPercentage}
                   aria-valuemin={0}
@@ -133,12 +118,12 @@ export function EventDetail({ event }: EventDetailProps) {
                   aria-label="Tickets sold"
                 >
                   <div
-                    className={`h-2.5 rounded-full transition-all ${
+                    className={`h-full rounded-full transition-[width] duration-500 ${
                       soldPercentage > 80
-                        ? "bg-rose-500"
+                        ? "bg-destructive"
                         : soldPercentage > 50
-                        ? "bg-amber-500"
-                        : "bg-emerald-500"
+                        ? "bg-warning"
+                        : "bg-success"
                     }`}
                     style={{ width: `${soldPercentage}%` }}
                   />
@@ -158,35 +143,31 @@ export function EventDetail({ event }: EventDetailProps) {
             <TabsContent value="about" className="mt-6">
               <Card>
                 <CardContent className="p-6">
-                  <div className="flex items-start gap-3 mb-4">
-                    <Info className="h-5 w-5 text-primary mt-0.5" />
+                  <div className="mb-6 flex items-start gap-3">
+                    <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" aria-hidden="true" />
                     <div>
-                      <h3 className="font-bold text-lg mb-2">About This Event</h3>
-                      <p className="text-muted-foreground leading-relaxed">
-                        {event.description}
-                      </p>
+                      <h2 className="mb-2 text-lg font-semibold">About this event</h2>
+                      <p className="leading-relaxed text-muted-foreground">{event.description}</p>
                     </div>
                   </div>
 
-                  <div className="mt-6 pt-6 border-t space-y-4">
-                    <h4 className="font-semibold">Event Highlights</h4>
-                    <ul className="space-y-2 text-sm text-muted-foreground">
-                      <li className="flex items-start gap-2">
-                        <span className="text-primary mt-1">•</span>
-                        <span>NFT-based tickets with blockchain verification</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-primary mt-1">•</span>
-                        <span>Secure resale marketplace available</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-primary mt-1">•</span>
-                        <span>Digital collectible ticket for attendees</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-primary mt-1">•</span>
-                        <span>Resale capped at 120% of face value to deter scalping</span>
-                      </li>
+                  <div className="space-y-3 border-t pt-6">
+                    <h3 className="font-semibold">What's included</h3>
+                    <ul className="grid gap-2.5 text-sm text-muted-foreground sm:grid-cols-2">
+                      {[
+                        "Verified ticket, transferable to your account",
+                        "Secure resale marketplace access",
+                        "Digital collectible for attendees",
+                        "Resale capped at 120% of face value",
+                      ].map(item => (
+                        <li key={item} className="flex items-start gap-2">
+                          <Check
+                            className="mt-0.5 h-4 w-4 flex-shrink-0 text-success"
+                            aria-hidden="true"
+                          />
+                          <span>{item}</span>
+                        </li>
+                      ))}
                     </ul>
                   </div>
                 </CardContent>
@@ -234,7 +215,7 @@ export function EventDetail({ event }: EventDetailProps) {
           <Button variant="outline" className="w-full" onClick={handleShare}>
             {shared ? (
               <>
-                <Check className="mr-2 h-4 w-4 text-emerald-600" aria-hidden="true" />
+                <Check className="mr-2 h-4 w-4 text-success" aria-hidden="true" />
                 Link copied
               </>
             ) : (
